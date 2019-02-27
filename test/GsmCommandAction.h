@@ -20,7 +20,7 @@ public:
         GsmCommandAction (const char *c) : command (c), len (0) {}
         GsmCommandAction (uint8_t const *c, uint16_t len) : command (reinterpret_cast <const char *> (c)), len (len) {}
         virtual ~GsmCommandAction () {}
-        virtual bool run (const char *input, void *arg);
+        virtual bool run (const char *input);
 
 protected:
         const char *command;

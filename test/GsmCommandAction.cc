@@ -3,7 +3,7 @@
 
 std::vector<std::string> gsmModemCommandsIssued;
 
-bool GsmCommandAction::run (const char *, void *)
+bool GsmCommandAction::run (const char *)
 {
         gsmModemCommandsIssued.push_back (command);
         return true;

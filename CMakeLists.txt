@@ -38,6 +38,8 @@ ADD_EXECUTABLE (unittest
     "src/Action.h"
     "src/Condition.cc"
     "src/Condition.h"
+    "src/StringCondition.cc"
+    "src/StringCondition.h"
     "src/State.cc"
     "src/State.h"
     "src/StateMachine.cc"
@@ -47,6 +49,8 @@ ADD_EXECUTABLE (unittest
     "src/TimeCounter.h"
 
     "test/etl_profile.h"
+    "test/GsmCommandAction.h"
+    "test/GsmCommandAction.cc"
     "test/00CatchInit.cc"
     "test/01InstantiationInitialTest.cc"
 )
