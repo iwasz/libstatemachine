@@ -1,28 +1,16 @@
 #include "Action.h"
 #include "ErrorHandler.h"
 
-#if 0
-///*****************************************************************************/
+/*****************************************************************************/
 
-// void Action::setNext (Action *n)
-//{
-//        if (next) {
-//                Error_Handler ();
-//        }
-
-//        next = n;
-//}
-
-///*****************************************************************************/
-
-bool AndAction::run (const char *input)
+bool AndAction::run (EventType const &event)
 {
         if (!current) {
                 current = a;
         }
 
         if (current == a) {
-                if (!a->run (input)) {
+                if (!a->run (event)) {
                         return false;
                 }
                 else {
@@ -31,7 +19,7 @@ bool AndAction::run (const char *input)
         }
 
         if (current == b) {
-                if (!b->run (input)) {
+                if (!b->run (event)) {
                         return false;
                 }
                 else {
@@ -43,4 +31,3 @@ bool AndAction::run (const char *input)
 }
 
 AndAction *and_action (Action *a, Action *b) { return new AndAction (a, b); }
-#endif

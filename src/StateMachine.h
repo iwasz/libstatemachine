@@ -194,7 +194,6 @@ public:
         EventQueue &getEventQueue () { return eventQueue; }
         EventQueue const &getEventQueue () const { return eventQueue; }
 
-private:
         void setInitialState (State *s);
         void setInitialState (uint8_t stateLabel);
         void addState (State *s);
