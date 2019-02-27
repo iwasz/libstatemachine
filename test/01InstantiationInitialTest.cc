@@ -98,7 +98,7 @@ TEST_CASE ("Pierwszy slick", "[Instantiation]")
 /**
  * @brief Testuje co się stanie jak na wejściu pojawi się dużo niepotrzebnego śmiecia.
  */
-TEST_CASE ("Irrelevant input slick", "[slick]")
+TEST_CASE ("Irrelevant input slick", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -195,7 +195,7 @@ TEST_CASE ("Irrelevant input slick", "[slick]")
 /**
  * @brief Dużo wejścia, kilka lini na raz, każda zmienia stan maszyny.
  */
-TEST_CASE ("Multiple relevant input slick", "[slick]")
+TEST_CASE ("Multiple relevant input slick", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -273,7 +273,7 @@ TEST_CASE ("Multiple relevant input slick", "[slick]")
 /**
  * @brief Testuje opóźnienia.
  */
-TEST_CASE ("Delays slick", "[slick]")
+TEST_CASE ("Delays slick", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -377,7 +377,7 @@ TEST_CASE ("Delays slick", "[slick]")
 /**
  * @brief Testuje warunek, który nie sprawdza wejść, tylko coś zewnętrznego (zmienną).
  */
-TEST_CASE ("Non input condition slick", "[slick]")
+TEST_CASE ("Non input condition slick", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -462,7 +462,7 @@ TEST_CASE ("Non input condition slick", "[slick]")
 /**
  * @brief Testuje czy działa przejśącie stanowe do samego siebie i czy za każdym razem wykonują się wszystkie akcje.
  */
-TEST_CASE ("Transition to myself slick", "[slick]")
+TEST_CASE ("Transition to myself slick", "[Instantiation]")
 {
 
         gsmModemCommandsIssued.clear ();
@@ -527,182 +527,7 @@ TEST_CASE ("Transition to myself slick", "[slick]")
 /**
  *
  */
-TEST_CASE ("Ored, anded", "[slick]")
-{
-
-        gsmModemCommandsIssued.clear ();
-
-        StateMachine machine;
-        auto &inputQueue = machine.getEventQueue ();
-
-        bool cond = false;
-        BoolCondition fakeCond (&cond);
-
-        machine.state (INITIAL, true)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (anded (eq ("OK"), &fakeCond));
-        machine.state (ALIVE)->entry (gsm ("ALIVE ENTRY"))->exit (gsm ("ALIVE EXIT"))->transition (ALIVE)->when (ored (eq ("HEJ"), eq ("HOPS")));
-
-        /*---------------------------------------------------------------------------*/
-        /* Uruchamiamy urządzenie                                                    */
-        /*---------------------------------------------------------------------------*/
-
-        // Irrelevant
-        inputQueue.push_back ();
-        inputQueue.back () = "OK";
-
-        // Przejdzie to initial State (initial Transition).
-        machine.run ();
-        REQUIRE (machine.currentState->getLabel () == INITIAL);
-        REQUIRE (gsmModemCommandsIssued.size () == 0);
-
-        // Nie przejdzie, do alive, bo musi być "OK", oraz fake na true. Input skonsumowany.
-        machine.run ();
-        REQUIRE (machine.currentState->getLabel () == INITIAL);
-        REQUIRE (gsmModemCommandsIssued.size () == 1);
-        REQUIRE (gsmModemCommandsIssued[0] == "INITIAL ENTRY");
-        //        REQUIRE (inputQueue.size () == 0);
-
-        // Znów odkładamy "OK", ale i włączamy fake cond.
-        inputQueue.push_back ();
-        inputQueue.back () = "OK";
-        cond = true;
-
-        // Teraz przewjdzie do alive
-        machine.run ();
-        REQUIRE (machine.currentState->getLabel () == ALIVE);
-        REQUIRE (gsmModemCommandsIssued.size () == 1);
-        REQUIRE (gsmModemCommandsIssued[0] == "INITIAL ENTRY");
-
-        // Teraz wykona entry na ALIVE i wyczyści input
-        machine.run ();
-        //        REQUIRE (inputQueue.size () == 0);
-        REQUIRE (machine.currentState->getLabel () == ALIVE);
-        REQUIRE (gsmModemCommandsIssued.size () == 2);
-        REQUIRE (gsmModemCommandsIssued[0] == "INITIAL ENTRY");
-        REQUIRE (gsmModemCommandsIssued[1] == "ALIVE ENTRY");
-
-        inputQueue.push_back ();
-        inputQueue.back () = "KLOPS";
-
-        machine.run ();
-        //        REQUIRE (inputQueue.size () == 0);
-        REQUIRE (machine.currentState->getLabel () == ALIVE);
-        REQUIRE (gsmModemCommandsIssued.size () == 2);
-
-        inputQueue.push_back ();
-        inputQueue.back () = "HEJ";
-
-        // Zmienił stan a ALIVE na ALIVE
-        machine.run ();
-        REQUIRE (machine.currentState->getLabel () == ALIVE);
-
-        // Wykonał akcje i wyszedł
-        machine.run ();
-        REQUIRE (gsmModemCommandsIssued.size () == 4);
-        REQUIRE (gsmModemCommandsIssued[0] == "INITIAL ENTRY");
-        REQUIRE (gsmModemCommandsIssued[1] == "ALIVE ENTRY");
-        REQUIRE (gsmModemCommandsIssued[2] == "ALIVE EXIT");
-        REQUIRE (gsmModemCommandsIssued[3] == "ALIVE ENTRY");
-
-        inputQueue.push_back ();
-        inputQueue.back () = "HOPS";
-
-        machine.run ();
-        machine.run ();
-        REQUIRE (gsmModemCommandsIssued.size () == 6);
-        REQUIRE (gsmModemCommandsIssued[4] == "ALIVE EXIT");
-        REQUIRE (gsmModemCommandsIssued[5] == "ALIVE ENTRY");
-        REQUIRE (machine.currentState->getLabel () == ALIVE);
-
-        inputQueue.push_back ();
-        inputQueue.back () = "HEJ";
-
-        machine.run ();
-        machine.run ();
-        REQUIRE (gsmModemCommandsIssued.size () == 8);
-        REQUIRE (gsmModemCommandsIssued[6] == "ALIVE EXIT");
-        REQUIRE (gsmModemCommandsIssued[7] == "ALIVE ENTRY");
-        REQUIRE (machine.currentState->getLabel () == ALIVE);
-        REQUIRE (inputQueue.size () == 0);
-}
-
-/**
- * @brief TEST_CASE
- */
-TEST_CASE ("Anded multi", "[slick]")
-{
-
-        gsmModemCommandsIssued.clear ();
-
-        StateMachine machine;
-        auto &inputQueue = machine.getEventQueue ();
-
-        bool cond = false;
-        BoolCondition fakeCond (&cond);
-
-        machine.state (INITIAL, true)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (anded (eq ("OK"), eq ("AT+CREG")));
-        machine.state (ALIVE)->entry (gsm ("ALIVE ENTRY"));
-
-        /*---------------------------------------------------------------------------*/
-        /* Uruchamiamy urządzenie                                                    */
-        /*---------------------------------------------------------------------------*/
-
-        // Irrelevant
-        inputQueue.push_back ();
-        inputQueue.back () = "OK";
-
-        // Przejdzie to initial State (initial Transition).
-        machine.run ();
-        REQUIRE (machine.currentState->getLabel () == INITIAL);
-        REQUIRE (gsmModemCommandsIssued.size () == 0);
-
-        // Nie przejdzie, do alive, bo musi być "OK", AT+CREG, a jest tylko OK
-        machine.run ();
-        REQUIRE (machine.currentState->getLabel () == INITIAL);
-        REQUIRE (gsmModemCommandsIssued.size () == 1);
-        REQUIRE (gsmModemCommandsIssued[0] == "INITIAL ENTRY");
-
-        //        REQUIRE (inputQueue.size () == 0);
-        // Znów odkładamy "OK", ale i włączamy fake cond.
-        inputQueue.push_back ();
-        inputQueue.back () = "OK";
-
-        inputQueue.push_back ();
-        inputQueue.back () = "BABABA";
-
-        // Nie przejdzie. Wprawdzie są 2 inputy,ale drugi jest zły.
-        machine.run ();
-        REQUIRE (machine.currentState->getLabel () == INITIAL);
-        REQUIRE (gsmModemCommandsIssued.size () == 1);
-        REQUIRE (gsmModemCommandsIssued[0] == "INITIAL ENTRY");
-
-        //        REQUIRE (inputQueue.size () == 0);
-        // Znów odkładamy "OK", ale i włączamy fake cond.
-        inputQueue.push_back ();
-        inputQueue.back () = "OK";
-
-        inputQueue.push_back ();
-        inputQueue.back () = "AT+CREG";
-
-        machine.run ();
-        REQUIRE (inputQueue.size () == 0);
-
-        REQUIRE (machine.currentState->getLabel () == ALIVE);
-        REQUIRE (gsmModemCommandsIssued.size () == 1);
-        REQUIRE (gsmModemCommandsIssued[0] == "INITIAL ENTRY");
-
-        // Teraz wykona entry na ALIVE i wyczyści input
-        machine.run ();
-        //        REQUIRE (inputQueue.size () == 0);
-        REQUIRE (machine.currentState->getLabel () == ALIVE);
-        REQUIRE (gsmModemCommandsIssued.size () == 2);
-        REQUIRE (gsmModemCommandsIssued[0] == "INITIAL ENTRY");
-        REQUIRE (gsmModemCommandsIssued[1] == "ALIVE ENTRY");
-}
-
-/**
- *
- */
-TEST_CASE ("Negated", "[slick]")
+TEST_CASE ("Negated", "[Instantiation]")
 {
 
         gsmModemCommandsIssued.clear ();
@@ -768,7 +593,7 @@ TEST_CASE ("Negated", "[slick]")
 /**
  *
  */
-TEST_CASE ("Time passes", "[slick]")
+TEST_CASE ("Time passes", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -824,7 +649,7 @@ struct FakeAction : public Action {
 /**
  * @brief Testuje czy faktycznie "relevent" input trafia do akcji, a niepotrzebne wejącia są odrzucane
  */
-TEST_CASE ("Irrelevant and action", "[slick]")
+TEST_CASE ("Irrelevant and action", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -879,7 +704,7 @@ template <typename Q> struct FakeAction22 : public Action {
  * @brief Testuje czy jeśli akcja spowoduje pojawienie się nowego inputu (po to są akcje),
  * i czy nie zostanie on wyczyszczony przedwcześnie.
  */
-TEST_CASE ("Action that causes an input", "[slick]")
+TEST_CASE ("Action that causes an input", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -920,7 +745,7 @@ TEST_CASE ("Action that causes an input", "[slick]")
 /**
  * @brief TEST_CASE
  */
-TEST_CASE ("Global transition", "[slick]")
+TEST_CASE ("Global transition", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -972,7 +797,7 @@ TEST_CASE ("Global transition", "[slick]")
 /**
  *
  */
-TEST_CASE ("Multi Ored", "[slick]")
+TEST_CASE ("Multi Ored", "[Instantiation]")
 {
 
         gsmModemCommandsIssued.clear ();
@@ -1009,7 +834,7 @@ TEST_CASE ("Multi Ored", "[slick]")
 /**
  * @brief TEST_CASE
  */
-TEST_CASE ("Machine reset", "[slick]")
+TEST_CASE ("Machine reset", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -1072,7 +897,7 @@ TEST_CASE ("Machine reset", "[slick]")
         REQUIRE (gsmModemCommandsIssued[4] == "PIPIP");
 }
 
-TEST_CASE ("Global transition only", "[slick]")
+TEST_CASE ("Global transition only", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -1121,7 +946,7 @@ TEST_CASE ("Global transition only", "[slick]")
         REQUIRE (gsmModemCommandsIssued[5] == "AT");
 }
 
-TEST_CASE ("Global transition first", "[slick]")
+TEST_CASE ("Global transition first", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -1176,7 +1001,7 @@ TEST_CASE ("Global transition first", "[slick]")
 /*****************************************************************************/
 
 #if 0
-TEST_CASE ("Lambdas", "[slick]")
+TEST_CASE ("Lambdas", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
@@ -1214,7 +1039,7 @@ TEST_CASE ("Lambdas", "[slick]")
 
 /*****************************************************************************/
 
- TEST_CASE ("Arguments", "[slick]")
+ TEST_CASE ("Arguments", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 

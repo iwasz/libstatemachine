@@ -23,10 +23,14 @@ typedef Queue<Action *> ActionQueue;
 /**
  * @brief The StateMachine class
  * TODO Dodać globalny timeout. Jeśli w danym timeoucie nie uda się zmienić stanu, to trzeba podjąć jakąć
- * akcję.
+ * akcję. Ej to chyba jest!
+ *
  * TODO dokumentacja z tutorialem jest niezbędna, bo ja sam mam czasem problemy. Jak są ewaluowane warunki,
  * co do nich wpada, w jakiej kolejności i tak dalej. Opisać wszystkie aspekty działania : jak dwie maszyny
  * mogą pracować na jedym input/output i tak dalej.
+ *
+ *
+ *
  * TODO OrCondition i w ogóle API Condition ma poważny błąd. Usecase, żeby powtórzyć: Warunek:
  *
  * m->state (CONNECT_TO_SERVER)->entry (at ("AT+CIPSTART=0,\"TCP\",\"trackmatevm.cloudapp.net\",1883\r\n"))
@@ -46,6 +50,8 @@ typedef Queue<Action *> ActionQueue;
  *
  * TODO checkImpl i checkRetained powinny być prywatne i nie powinno być friendów moim zdaniem. Rekurencyjne
  * warunki jak And i Or powinny jakoś używać głownej metody check. Tylko wtedy będzie problem z sekwencją.
+ *
+ *
  *
  * TODO opisać, że zawsze trzeba pamiętyać czy jest odpowiednia ilość czasu na sprawdzenie warunków. Podać taki przykład:
  * Kiedy jest jeden warunek na przejście, który oczekuje jakichś danych, to nie ma problemu. Na przykład :

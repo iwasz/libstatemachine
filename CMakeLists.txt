@@ -63,5 +63,6 @@ ADD_EXECUTABLE (unittest
     "test/GsmCommandAction.cc"
     "test/00CatchInit.cc"
     "test/01InstantiationInitialTest.cc"
+    "test/02AndConditionTest.cc"
 )
 
