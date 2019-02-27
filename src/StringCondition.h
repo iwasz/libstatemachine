@@ -18,7 +18,7 @@ public:
 #ifndef UNIT_TEST
 protected:
 #endif
-        virtual bool checkImpl (const char *data) const;
+        virtual bool checkImpl (EventType const &event) const;
 
         const char *condition;
         bool stripInput;

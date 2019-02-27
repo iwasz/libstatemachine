@@ -1,9 +1,14 @@
 #ifndef ICONDITION_H
 #define ICONDITION_H
 
+#include "StateMachineTypes.h"
 #include "StringQueue.h"
 
 struct Condition {
+
+        using EventType = string;
+        using Types = StateMachineTypes<EventType>;
+        using EventQueue = Types::EventQueue;
 
         enum InputRetention { IGNORE_INPUT, RETAIN_INPUT };
 
@@ -17,10 +22,9 @@ struct Condition {
          * @param inputConsumed
          * @return
          */
-        virtual bool check (StringQueue *queue, uint8_t inputNum, char *retainedInput) const;
+        virtual bool check (EventQueue &eventQueue, uint8_t inputNum, EventType &retainedInput) const;
 
 protected:
-
         /**
          * @brief Wywołuje check i kopiuje input jeśli retainInput == true
          * @param data
@@ -28,14 +32,14 @@ protected:
          * @param inputConsumed
          * @return
          */
-        virtual bool checkAndRetain (const char *data, char *retainedInput) const;
+        virtual bool checkAndRetain (EventType const &event, EventType &retainedEvent) const;
 
         /**
          * @brief Sprawdza jakiś warunek.
          * @param data Dane wejściowe z kolejki.
          * @return Czy warunek jest spełniony
          */
-        virtual bool checkImpl (const char *data) const = 0;
+        virtual bool checkImpl (EventType const &event) const = 0;
 
         friend class NotCondition;
         friend class AndCondition;
@@ -45,21 +49,17 @@ protected:
         InputRetention retainInput;
 };
 
-/**
- * Można podać np. lambdę.
- */
-template <typename Func>
-class FuncCondition : public Condition {
-public:
+///**
+// * Można podać np. lambdę.
+// */
+// template <typename Func> class FuncCondition : public Condition {
+// public:
+//        FuncCondition (Func func) : func (func) {}
+//        virtual ~FuncCondition () {}
+//        virtual bool checkImpl (const char *data) const { return func (data); }
 
-        FuncCondition (Func func) : func (func) {}
-        virtual ~FuncCondition () {}
-        virtual bool checkImpl (const char *data) const { return func (data); }
-
-private:
-
-        Func func;
-};
+// private:
+//        Func func;
+//};
 
 #endif // ICONDITION_H
-

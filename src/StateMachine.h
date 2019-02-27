@@ -2,11 +2,14 @@
 #define STATEMACHINE_H
 
 #include "State.h"
+#include "StateMachineTypes.h"
 #include "StringQueue.h"
 #include "TimeCounter.h"
 #include "Transition.h"
 #include <cstring>
 
+// TODO
+// namespace sm {
 /**
  * Do synchronizacji 2 maszyn. Uwaga, tylko potęgi dwójki.
  */
@@ -128,20 +131,21 @@ typedef Queue<Action *> ActionQueue;
  */
 class StateMachine {
 public:
-        static constexpr size_t MAX_STATES_NUM = 64;
-        static constexpr size_t ACTION_QUEUE_SIZE = 8;
+        using EventType = string;
+        using Types = StateMachineTypes<EventType>;
+        using EventQueue = Types::EventQueue;
 
-        StateMachine (StringQueue *inputQueue, uint32_t logId = 0, bool useOnlyOneInputAtATime = false)
+        StateMachine (uint32_t logId = 0, bool useOnlyOneInputAtATime = false)
             : lastAddedState (nullptr),
               lastAddedTransition (nullptr),
               lastAddedTransitionRF (nullptr),
               lastAddedTransitionRL (nullptr),
               lastAddedAction (nullptr),
-              inputQueue (inputQueue),
               initialState (nullptr),
               currentState (nullptr),
               firstTransitionRL (nullptr),
               firstTransitionRF (nullptr),
+              eventQueue (EVENT_QUEUE_SIZE),
               actionQueue (ACTION_QUEUE_SIZE),
               logId (logId),
               synchroCounter (nullptr),
@@ -157,12 +161,6 @@ public:
          * wejściowych, maszyna może podjąć jakąś akcję na podstaiwe opóźnień (długi brak danych we. etc).
          */
         void run ();
-
-        void setInitialState (State *s);
-        void setInitialState (uint8_t stateLabel);
-        void addState (State *s);
-        void setInputQueue (StringQueue *q) { inputQueue = q; }
-        void addGlobalTransition (Transition *t, Transition::Type run = Transition::RUN_LAST);
 
         /**
          * @brief Resetuje maszynę.
@@ -180,19 +178,27 @@ public:
                 this->synchroModulo = synchroModulo;
         }
 
-        //        void setTimeCounter (TimeCounter *value) { timeCounter = value; }
+        void setTimeCounter (TimeCounter *value) { timeCounter = value; }
 
-public:
         StateMachine *state (uint8_t label, uint8_t flags = State::NONE); /// Nowy stan o nazwie label.
         StateMachine *entry (Action *action);                             /// Entry action do ostatnio dodanego stanu.
         StateMachine *exit (Action *action);                              /// Exit action do ostatnio dodanego stanu.
         StateMachine *transition (uint8_t to,
                                   Transition::Type run = Transition::RUN_LAST); /// Przejście z ostatnio dodanego stanu do stanu o nazwie "to".
         StateMachine *when (Condition *cond);                                   /// Warunek do ostatnio dodanego przejścia (transition).
-        template <typename Func> StateMachine *whenf (Func func) { return when (new FuncCondition<Func> (func)); }
+        //        template <typename Func> StateMachine *whenf (Func func) { return when (new FuncCondition<Func> (func)); }
 
         StateMachine *then (Action *action); /// Akcja do ostatnio dodanego przejścia (transition).
         //        template <typename Func> StateMachine *thenf (Func func) { return then (new FuncAction<Func> (func)); }
+
+        EventQueue &getEventQueue () { return eventQueue; }
+        EventQueue const &getEventQueue () const { return eventQueue; }
+
+private:
+        void setInitialState (State *s);
+        void setInitialState (uint8_t stateLabel);
+        void addState (State *s);
+        void addGlobalTransition (Transition *t, Transition::Type run = Transition::RUN_LAST);
 
 private:
         State *lastAddedState;
@@ -210,7 +216,7 @@ public:
         void pushBackAction (Action *a);
         bool fireActions ();
         bool fixCurrentState ();
-        Transition *findTransition (StringQueue *inputQueue, uint8_t noOfInputs);
+        Transition *findTransition (uint8_t noOfInputs);
         void performTransition (Transition *t);
 
         enum Error {
@@ -230,14 +236,14 @@ public:
 private:
 #endif
 
-        StringQueue *inputQueue;
+        EventQueue eventQueue;
         State *initialState;
         State *currentState;
         Transition *firstTransitionRL; /// Run last
         Transition *firstTransitionRF; /// Run First
         State *states[MAX_STATES_NUM];
         // Z kolejki jest kopiowane tutaj kiedy warunek zostanie spełniony i ma ustawione RETAIN
-        char inputCopy[STRING_QUEUE_BUFFER_SIZE];
+        EventType inputCopy;
         ActionQueue actionQueue;
         TimeCounter *timeCounter = nullptr;
         uint32_t logId;
@@ -253,5 +259,7 @@ private:
          */
         bool useOnlyOneInputAtATime;
 };
+
+//}
 
 #endif // STATEMACHINE_H

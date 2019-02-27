@@ -57,7 +57,7 @@ bool StateMachine::fixCurrentState ()
 
 /*****************************************************************************/
 
-Transition *StateMachine::findTransition (StringQueue *inputQueue, uint8_t noOfInputs)
+Transition *StateMachine::findTransition (uint8_t noOfInputs)
 {
         Transition *ret = nullptr;
         enum Stage { FIRSTS, REGULARS, LASTS };
@@ -76,7 +76,7 @@ Transition *StateMachine::findTransition (StringQueue *inputQueue, uint8_t noOfI
 
         while (1) {
 
-                if (!t || !t->getCondition () || !t->getCondition ()->check (inputQueue, noOfInputs, inputCopy)) {
+                if (!t || !t->getCondition () || !t->getCondition ()->check (eventQueue, noOfInputs, inputCopy)) {
 
                         if (t) {
                                 t = t->next;
@@ -165,13 +165,13 @@ void StateMachine::run ()
         __disable_irq ();
 #endif
 
-        uint8_t noOfInputs = (useOnlyOneInputAtATime) ? (1) : (inputQueue->size ());
+        uint8_t noOfInputs = (useOnlyOneInputAtATime) ? (1) : (eventQueue.size ());
 
 #ifndef UNIT_TEST
         __enable_irq ();
 #endif
 
-        Transition *t = findTransition (inputQueue, noOfInputs);
+        Transition *t = findTransition (noOfInputs);
 
         if (!t) {
                 return;
@@ -181,7 +181,12 @@ void StateMachine::run ()
         __disable_irq ();
 #endif
 
-        inputQueue->pop_front (noOfInputs);
+        //        for (int i = 0; i < noOfInputs; ++i) {
+        //                // I call "from_isr" version because I lock by myself.
+        //                eventQueue.pop_from_isr ();
+        //        }
+
+        eventQueue.pop_front (noOfInputs);
 
 #ifndef UNIT_TEST
         __enable_irq ();
@@ -374,18 +379,18 @@ void StateMachine::reset (/*uint8_t state*/)
         __disable_irq ();
 #endif
 
-        inputQueue->clear ();
+        eventQueue.clear ();
 
 #ifndef UNIT_TEST
         __enable_irq ();
 #endif
-        //        currentState = states[state];
+
         currentState = nullptr;
 
-        //        Przez to TimeCountery wariowały. Ticket #83
-        //        if (timeCounter) {
-        //                timeCounter->reset ();
-        //        }
+        // Przez to TimeCountery wariowały. Ticket #83
+        // if (timeCounter) {
+        //         timeCounter->reset ();
+        // }
 
         inputCopy[0] = '\0';
         actionQueue.clear ();

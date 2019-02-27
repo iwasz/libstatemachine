@@ -6,34 +6,41 @@
  *  ~~~~~~~~~                                                               *
  ****************************************************************************/
 
-#include <cstring>
 #include "Condition.h"
+#include <cstring>
 
-bool Condition::check (StringQueue *queue, uint8_t inputNum, char *retainedInput) const
+bool Condition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &retainedInput) const
 {
-        bool conditionMet = false;
-        char *el;
+//        bool conditionMet = false;
+//        EventType const &el;
 
-        if (queue->size ()) {
-                uint8_t i = 0;
-                while (i < inputNum && (el = queue->front (i++)) && !(conditionMet = checkAndRetain (el, retainedInput)))
-                        ;
+        if (eventQueue.size ()) {
+//                uint8_t i = 0;
+//                while (i < inputNum && (el = eventQueue.front (i++)) && !(conditionMet = checkAndRetain (el, retainedInput)))
+//                        ;
+
+                for (int i = 0; i < inputNum; ++i) {
+                    if (checkAndRetain (eventQueue.front (i), retainedInput)) {
+                        return true;
+                    }
+                }
         }
         else {
-                conditionMet = checkImpl (static_cast <const char *> (nullptr));
+                /*conditionMet = */return checkImpl (static_cast<const char *> (nullptr));
         }
 
-        return conditionMet;
+//        return conditionMet;
+        return false;
 }
 
 /*****************************************************************************/
 
-bool Condition::checkAndRetain (const char *data, char *retainedInput) const
+bool Condition::checkAndRetain (EventType const &event, EventType &retainedEvent) const
 {
-        bool conditionMet = checkImpl (data);
+        bool conditionMet = checkImpl (event);
 
         if (conditionMet && retainInput) {
-                strncpy (retainedInput, data, STRING_QUEUE_BUFFER_SIZE);
+                retainedEvent = event;
         }
 
         return conditionMet;

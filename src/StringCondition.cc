@@ -1,33 +1,36 @@
-#include <cctype>
 #include "StringCondition.h"
+#include <cctype>
 
-bool StringCondition::checkImpl (const char *data) const
+bool StringCondition::checkImpl (EventType const &event) const
 {
-        if (!data) {
+        if (event.empty ()) {
                 return !condition;
         }
 
         const char *c = condition;
+        int ei = 0;
+        int ci = 0;
 
         // Stripuj początek.
         if (stripInput) {
-                while (std::isspace (*data)) {
-                        ++data;
+                while (ei < event.size () && std::isspace (event[ei])) {
+                        ++ei;
                 }
         }
 
-        while (*data && (*data == *c)) {
-                ++data, ++c;
+        while (ei < event.size () /*&& ci < c.size () */ && (event[ei] == *c)) {
+                ++c;
+                ++ei;
         }
 
         // Stripuj koniec.
         if (stripInput) {
-                while (std::isspace (*data)) {
-                        ++data;
+                while (ei < event.size () && std::isspace (event[ei])) {
+                        ++ei;
                 }
         }
 
-        bool result = (*(const unsigned char *)data - *(const unsigned char *)c) == 0;
+        bool result = (event[ei] == *c);
         return (negated) ? (!result) : (result);
 }
 

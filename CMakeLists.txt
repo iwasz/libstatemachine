@@ -44,6 +44,7 @@ ADD_EXECUTABLE (unittest
     "src/State.h"
     "src/StateMachine.cc"
     "src/StateMachine.h"
+    "src/StateMachineTypes.h"
     "src/Transition.cc"
     "src/Transition.h"
     "src/TimeCounter.h"

@@ -1,13 +1,15 @@
 #ifndef ACTION_IACTION_H
 #define ACTION_IACTION_H
 
-//#include "StringQueue.h"
+#include "StateMachineTypes.h"
 
 /**
  * @brief Baza dla wszystkich akcji.
  */
 class Action /*: public Operation*/ {
 public:
+        using EventType = string;
+
         Action (/*Action *next = nullptr*/) /*: next (next)*/ {}
         virtual ~Action () {}
 
@@ -15,23 +17,20 @@ public:
          * @brief Uruchamia akcję.
          * @return Czy akcja zakończyła swoje działanie, czy nie (np. delay).
          */
-        virtual bool run (const char *input) = 0;
+        virtual bool run (EventType const &event) = 0;
 
         //        Action *getNext () { return next; }
         //        void setNext (Action *n);
 
         //        Action *and_action (Action *action);
 
-//private:
+        // private:
         //        Action *next;
 };
-
 
 #ifdef UNIT_TEST
 class TestAction : public Action {
 public:
-
-
 };
 #endif
 

@@ -5,20 +5,26 @@
 #include <cstring>
 #include <etl/cstring.h>
 
-using string = etl::string<64>;
+// using namespace sm;
 
 /**
  * @brief TEST_CASE
  */
 TEST_CASE ("First instantiation", "[Instantiation]")
 {
-        REQUIRE (true);
-        //        StateMachine<string> machine;
+        //        REQUIRE (true);
+        //        StateMachine machine;
+        //        auto inputQueue = machine.getEventQueue ();
+
+        //        Queue <string> aaa (8);
+        //        aaa.push_back();
+        //        aaa.back() = "OK";
 }
 
 enum MyStates { INITIAL, ALIVE, POWER_DOWN, X, Y, Z };
 static constexpr size_t STRING_QUEUE_SIZE = 16;
 
+#if 1
 /**
  * @brief TEST_CASE
  */
@@ -26,12 +32,14 @@ TEST_CASE ("Pierwszy slick", "[slick]")
 {
         gsmModemCommandsIssued.clear ();
 
-        StringQueue inputQueue (STRING_QUEUE_SIZE);
-        StateMachine machine (&inputQueue);
+        StateMachine machine;
+        auto &inputQueue = machine.getEventQueue ();
 
         machine.state (INITIAL, true)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (ALIVE)->entry (gsm ("POWEROFF"))->exit (gsm ("BLAH"))->transition (POWER_DOWN)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (POWER_DOWN);
+
+        //        machine.state (123)
 
         /*---------------------------------------------------------------------------*/
         /* Uruchamiamy urządzenie                                                    */
@@ -63,14 +71,14 @@ TEST_CASE ("Pierwszy slick", "[slick]")
         // Symulujemy, że modem odpowiedział "OK", co pojawiło się na kolejce danych we. Maszyna
         // monitoruje tą kolejkę.
         inputQueue.push_back ();
-        char *el = inputQueue.back ();
-        strcpy (el, "OK");
+        inputQueue.back () = "OK";
 
         // Trzecie uruchomienie maszyny, transition złapała odpowiedź "OK" i zadecydowała o zmianie stanu.
         machine.run ();
 
         // Akcje.
         machine.run ();
+        REQUIRE (machine.currentState);
         REQUIRE (machine.currentState->getLabel () == ALIVE);
 
         // Jeżeli maszyna stanów dokonała zmiany stanu, to automatycznie powinna zdjąć element z kolejki.
@@ -85,8 +93,7 @@ TEST_CASE ("Pierwszy slick", "[slick]")
 
         // Symulujemy znów odpowieddź od modemu, że OK
         inputQueue.push_back ();
-        el = inputQueue.back ();
-        strcpy (el, "OK");
+        inputQueue.back () = "OK";
         machine.run ();
         machine.run ();
         REQUIRE (machine.currentState->getLabel () == POWER_DOWN);
@@ -97,3 +104,4 @@ TEST_CASE ("Pierwszy slick", "[slick]")
 
         REQUIRE (inputQueue.size () == 0);
 }
+#endif
