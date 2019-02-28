@@ -4,13 +4,13 @@
 #include "StateMachineTypes.h"
 #include "StringQueue.h"
 
+enum class InputRetention { IGNORE_INPUT, RETAIN_INPUT };
+
 template <typename EventT = string> struct Condition {
 
         using EventType = EventT;
         using Types = StateMachineTypes<EventType>;
         using EventQueue = typename Types::EventQueue;
-
-        enum InputRetention { IGNORE_INPUT, RETAIN_INPUT };
 
         virtual ~Condition () = default;
 
@@ -26,7 +26,7 @@ template <typename EventT = string> struct Condition {
         virtual void reset () { result = false; }
 
 protected:
-        Condition (InputRetention r = IGNORE_INPUT) : retainInput (r) {}
+        Condition (InputRetention r = InputRetention::IGNORE_INPUT) : retainInput (r) {}
 
         /**
          * @brief Sprawdza jakiś warunek.
@@ -46,7 +46,7 @@ template <typename EventT> bool Condition<EventT>::check (EventType const &event
 {
         result = checkImpl (event);
 
-        if (result && retainInput) {
+        if (result && retainInput == InputRetention::RETAIN_INPUT) {
                 retainedEvent = event;
         }
 

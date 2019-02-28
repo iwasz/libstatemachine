@@ -667,7 +667,7 @@ TEST_CASE ("Irrelevant and action", "[Instantiation]")
         machine.state (INITIAL, StateFlags::INITIAL)
                 ->entry (gsm ("AT"))
                 ->transition (ALIVE)
-                ->when (eq ("OK", StringCondition<string>::STRIP, Condition<string>::RETAIN_INPUT));
+                ->when (eq ("OK", StripInput::STRIP, InputRetention::RETAIN_INPUT));
         machine.state (ALIVE)->entry (&fakeAction)->transition (POWER_DOWN)->when (eq ("OK"));
         machine.state (POWER_DOWN);
 
@@ -968,7 +968,7 @@ TEST_CASE ("Global transition first", "[Instantiation]")
         auto &inputQueue = machine.getEventQueue ();
 
         /* clang-format off */
-        machine.transition (INITIAL, Transition<string>::RUN_FIRST)->when (eq ("RESET"))->then (gsm ("RRR"));
+        machine.transition (INITIAL, TransitionPriority::RUN_FIRST)->when (eq ("RESET"))->then (gsm ("RRR"));
 
         machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("AT"))
                 ->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));

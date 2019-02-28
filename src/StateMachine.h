@@ -170,8 +170,8 @@ public:
         StateMachine *entry (ActionType *action);                                 /// Entry action do ostatnio dodanego stanu.
         StateMachine *exit (ActionType *action);                                  /// Exit action do ostatnio dodanego stanu.
         StateMachine *transition (uint8_t to,
-                                  typename TransitionType::Type run
-                                  = TransitionType::RUN_LAST); /// Przejście z ostatnio dodanego stanu do stanu o nazwie "to".
+                                  TransitionPriority run
+                                  = TransitionPriority::RUN_LAST); /// Przejście z ostatnio dodanego stanu do stanu o nazwie "to".
 
         StateMachine *when (ConditionType *cond); /// Warunek do ostatnio dodanego przejścia (transition).
         //        template <typename Func> StateMachine *whenf (Func func) { return when (new FuncCondition<Func> (func)); }
@@ -185,7 +185,7 @@ public:
         void setInitialState (StateType *s);
         void setInitialState (uint8_t stateLabel);
         void addState (StateType *s);
-        void addGlobalTransition (TransitionType *t, typename TransitionType::Type run = TransitionType::RUN_LAST);
+        void addGlobalTransition (TransitionType *t, TransitionPriority run = TransitionPriority::RUN_LAST);
 
 private:
         bool check (ConditionType &condition, uint8_t inputNum, EventType &retainedInput);
@@ -484,9 +484,9 @@ template <typename EventT> void StateMachine<EventT>::setInitialState (uint8_t s
 
 /*****************************************************************************/
 
-template <typename EventT> void StateMachine<EventT>::addGlobalTransition (TransitionType *t, typename TransitionType::Type run)
+template <typename EventT> void StateMachine<EventT>::addGlobalTransition (TransitionType *t, TransitionPriority run)
 {
-        if (run == TransitionType::RUN_LAST) {
+        if (run == TransitionPriority::RUN_LAST) {
                 if (!lastAddedTransitionRL) {
                         firstTransitionRL = lastAddedTransitionRL = lastAddedTransition = t;
                 }
@@ -600,7 +600,7 @@ template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::exit (Act
 
 /*****************************************************************************/
 
-template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::transition (uint8_t to, typename TransitionType::Type run)
+template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::transition (uint8_t to, TransitionPriority run)
 {
         if (!lastAddedState) {
                 // errorCondition (NO_LAST_ADDED_STATE);

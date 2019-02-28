@@ -33,7 +33,7 @@ private:
 template <typename EventT = string> class TrueCondition : public Condition<EventT> {
 public:
         using EventType = EventT;
-        TrueCondition (typename Condition<EventT>::InputRetention r = Condition<EventT>::IGNORE_INPUT) : Condition<EventType> (r) {}
+        TrueCondition (InputRetention r = InputRetention::IGNORE_INPUT) : Condition<EventType> (r) {}
         virtual ~TrueCondition () override = default;
         bool checkImpl (EventType const &) const override { return true; }
 };

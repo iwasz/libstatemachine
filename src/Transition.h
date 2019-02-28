@@ -5,10 +5,11 @@
 #include "Condition.h"
 #include "State.h"
 
+enum class TransitionPriority { RUN_FIRST, RUN_LAST };
+
 template <typename EventT = string> class Transition {
 public:
         using EventType = EventT;
-        enum Type { RUN_FIRST, RUN_LAST };
 
         Transition (Condition<EventType> *c = nullptr, uint8_t to = 0, Action<EventType> *action = nullptr)
             : condition (c), to (to), action (action), next (nullptr)

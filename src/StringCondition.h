@@ -4,16 +4,17 @@
 #include "Condition.h"
 #include <cctype>
 
+enum class StripInput { DONT_STRIP, STRIP };
+
 /**
  * @brief Warunek porównujący wejście z napisem który podajemy jako arg. konstruktora.
  */
 template <typename EventT = string> class StringCondition : public Condition<EventT> {
 public:
         using EventType = EventT;
-        enum StripInput { DONT_STRIP, STRIP };
 
-        StringCondition (const char *condition, StripInput stripInput = STRIP, bool ne = false,
-                         typename Condition<EventT>::InputRetention retainInput = Condition<EventT>::IGNORE_INPUT)
+        StringCondition (const char *condition, StripInput stripInput = StripInput::STRIP, bool ne = false,
+                         InputRetention retainInput = InputRetention::IGNORE_INPUT)
             : Condition<EventType> (retainInput), condition (condition), stripInput (stripInput), negated (ne)
         {
         }
@@ -24,7 +25,7 @@ protected:
         virtual bool checkImpl (EventType const &event) const;
 
         const char *condition;
-        bool stripInput;
+        StripInput stripInput;
         bool negated;
 };
 
@@ -41,7 +42,7 @@ template <typename EventT> bool StringCondition<EventT>::checkImpl (EventType co
         int ci = 0;
 
         // Stripuj początek.
-        if (stripInput) {
+        if (stripInput == StripInput::STRIP) {
                 while (ei < event.size () && std::isspace (event[ei])) {
                         ++ei;
                 }
@@ -53,7 +54,7 @@ template <typename EventT> bool StringCondition<EventT>::checkImpl (EventType co
         }
 
         // Stripuj koniec.
-        if (stripInput) {
+        if (stripInput == StripInput::STRIP) {
                 while (ei < event.size () && std::isspace (event[ei])) {
                         ++ei;
                 }
@@ -66,8 +67,8 @@ template <typename EventT> bool StringCondition<EventT>::checkImpl (EventType co
 /*****************************************************************************/
 
 template <typename EventT = string>
-StringCondition<EventT> *eq (const char *condition, typename StringCondition<EventT>::StripInput stripInput = StringCondition<EventT>::STRIP,
-                             typename Condition<EventT>::InputRetention retainInput = Condition<EventT>::IGNORE_INPUT)
+StringCondition<EventT> *eq (const char *condition, StripInput stripInput = StripInput::STRIP,
+                             InputRetention retainInput = InputRetention::IGNORE_INPUT)
 {
         return new StringCondition<EventT> (condition, stripInput, false, retainInput);
 }
@@ -75,8 +76,8 @@ StringCondition<EventT> *eq (const char *condition, typename StringCondition<Eve
 /*****************************************************************************/
 
 template <typename EventT = string>
-StringCondition<EventT> *ne (const char *condition, typename StringCondition<EventT>::StripInput stripInput = StringCondition<EventT>::STRIP,
-                             typename Condition<EventT>::InputRetention retainInput = Condition<EventT>::IGNORE_INPUT)
+StringCondition<EventT> *ne (const char *condition, StripInput stripInput = StripInput::STRIP,
+                             InputRetention retainInput = InputRetention::IGNORE_INPUT)
 {
         return new StringCondition<EventT> (condition, stripInput, true);
 }
