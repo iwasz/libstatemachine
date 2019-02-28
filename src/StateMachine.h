@@ -109,6 +109,8 @@
  * TODO Pousuwać konstruktyory i metody, których nie używam w ogóle.
  *
  * TODO Zależność od libmicro dać jako opcję (ifdef)
+ *
+ * TODO W walgrindzie jak się uruchomi unitytest to jeden nie przechodzi.
  */
 template <typename EventT = string> class StateMachine {
 public:
