@@ -9,7 +9,7 @@
 /**
  * @brief Minęło x milisekund od ostatniego przejścia stanowego.
  */
-template <typename EventT = string> class TimePassedCondition : public Condition<EventT> {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class TimePassedCondition : public Condition<EventT> {
 public:
         using EventType = EventT;
 
@@ -44,7 +44,7 @@ template <typename EventT> bool TimePassedCondition<EventT>::checkImpl (const Ev
 /**
  *
  */
-template <typename EventT = string> TimePassedCondition<EventT> *msPassed (uint16_t m, TimeCounter *s)
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> TimePassedCondition<EventT> *msPassed (uint16_t m, TimeCounter *s)
 {
         return new TimePassedCondition<EventT> (m, s);
 }

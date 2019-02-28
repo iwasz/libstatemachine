@@ -7,7 +7,7 @@
 /**
  * @brief Baza dla wszystkich akcji.
  */
-template <typename EventT = string> class Action {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class Action {
 public:
         using EventType = EventT;
 
@@ -26,7 +26,7 @@ public:
 };
 
 #ifdef UNIT_TEST
-template <typename EventT = string> class TestAction : public Action<EventT> {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class TestAction : public Action<EventT> {
 public:
 };
 #endif
@@ -34,7 +34,7 @@ public:
 /**
  * @brief Wykonuje dwie akcje po kolei.
  */
-template <typename EventT = string> class AndAction : public Action<EventT> {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class AndAction : public Action<EventT> {
 public:
         using EventType = EventT;
 
@@ -85,7 +85,7 @@ template <typename EventT> bool AndAction<EventT>::run (EventType const &event)
 
 /*****************************************************************************/
 
-template <typename EventT = string> AndAction<EventT> *and_action (Action<EventT> *a, Action<EventT> *b) { return new AndAction<EventT> (a, b); }
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> AndAction<EventT> *and_action (Action<EventT> *a, Action<EventT> *b) { return new AndAction<EventT> (a, b); }
 
 /**
  * Szablon do tworzenia akcji, które mają funktor (na przykład lambdę).
@@ -103,6 +103,6 @@ private:
 
 /*****************************************************************************/
 
-template <typename Func, typename EventT = string> FuncAction<Func, EventT> *func (Func func) { return new FuncAction<Func, EventT> (func); }
+template <typename Func, typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> FuncAction<Func, EventT> *func (Func func) { return new FuncAction<Func, EventT> (func); }
 
 #endif // IACTION_H

@@ -21,6 +21,10 @@ static constexpr size_t EVENT_QUEUE_SIZE = 8;
 
 using string = etl::string<64>;
 
+#ifndef LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE
+#define LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE string
+#endif
+
 /**
  * etl::queue_spsc_isr
  */

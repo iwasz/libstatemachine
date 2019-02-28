@@ -112,7 +112,7 @@
  *
  * TODO W walgrindzie jak się uruchomi unitytest to jeden nie przechodzi.
  */
-template <typename EventT = string> class StateMachine {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class StateMachine {
 public:
         using EventType = EventT;
         using Types = StateMachineTypes<EventType>;

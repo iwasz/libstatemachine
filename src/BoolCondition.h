@@ -14,7 +14,7 @@
 /**
  * @brief Zwraca czy *B jest true.
  */
-template <typename EventT = string> class BoolCondition : public Condition<EventT> {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class BoolCondition : public Condition<EventT> {
 public:
         using EventType = EventT;
         BoolCondition (bool *b) : b (b) {}
@@ -30,7 +30,7 @@ private:
 /**
  * Always true condition.
  */
-template <typename EventT = string> class TrueCondition : public Condition<EventT> {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class TrueCondition : public Condition<EventT> {
 public:
         using EventType = EventT;
         TrueCondition (InputRetention r = InputRetention::IGNORE_INPUT) : Condition<EventType> (r) {}
@@ -43,7 +43,7 @@ static TrueCondition alwaysTrue;
 /**
  * Always false condition.
  */
-template <typename EventT = string> class FalseCondition : public Condition<EventT> {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class FalseCondition : public Condition<EventT> {
 public:
         using EventType = EventT;
         // Cannot retain, so no constructor.

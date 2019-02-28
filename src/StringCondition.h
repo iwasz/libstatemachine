@@ -9,7 +9,7 @@ enum class StripInput { DONT_STRIP, STRIP };
 /**
  * @brief Warunek porównujący wejście z napisem który podajemy jako arg. konstruktora.
  */
-template <typename EventT = string> class StringCondition : public Condition<EventT> {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class StringCondition : public Condition<EventT> {
 public:
         using EventType = EventT;
 
@@ -66,7 +66,7 @@ template <typename EventT> bool StringCondition<EventT>::checkImpl (EventType co
 
 /*****************************************************************************/
 
-template <typename EventT = string>
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE>
 StringCondition<EventT> *eq (const char *condition, StripInput stripInput = StripInput::STRIP,
                              InputRetention retainInput = InputRetention::IGNORE_INPUT)
 {
@@ -75,7 +75,7 @@ StringCondition<EventT> *eq (const char *condition, StripInput stripInput = Stri
 
 /*****************************************************************************/
 
-template <typename EventT = string>
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE>
 StringCondition<EventT> *ne (const char *condition, StripInput stripInput = StripInput::STRIP,
                              InputRetention retainInput = InputRetention::IGNORE_INPUT)
 {

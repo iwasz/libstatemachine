@@ -14,7 +14,7 @@
 /**
  * @brief Jak nazwa wskazuje. Do 5 operandów.
  */
-template <typename EventT = string> class OrCondition : public Condition<EventT> {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class OrCondition : public Condition<EventT> {
 public:
         using EventType = EventT;
 
@@ -47,7 +47,7 @@ private:
 
 /*****************************************************************************/
 
-template <typename EventT = string> OrCondition<EventT> *ored (Condition<EventT> *a, Condition<EventT> *b)
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> OrCondition<EventT> *ored (Condition<EventT> *a, Condition<EventT> *b)
 {
         return new OrCondition<EventT> (a, b);
 }

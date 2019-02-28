@@ -7,7 +7,7 @@
 
 enum class TransitionPriority { RUN_FIRST, RUN_LAST };
 
-template <typename EventT = string> class Transition {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class Transition {
 public:
         using EventType = EventT;
 

@@ -20,7 +20,7 @@
  * @brief Akcja, której jedynym zadaniem jest opóźnienie. Zatrzymuje całą maszynę i następna
  * akcja poniej, albo następne przejście wykona się dopiero po upłynięciu zadanego czasu.
  */
-template <typename EventT = string> class DelayAction : public Action<EventT> {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class DelayAction : public Action<EventT> {
 public:
         using EventType = EventT;
 
@@ -64,6 +64,6 @@ template <typename EventT> bool DelayAction<EventT>::run (const EventType &event
 /**
  * @brief Helper do tworzenia opóźnień.
  */
-template <typename EventT = string> DelayAction<EventT> *delayMs (uint16_t delay) { return new DelayAction<EventT> (delay); }
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> DelayAction<EventT> *delayMs (uint16_t delay) { return new DelayAction<EventT> (delay); }
 
 #endif // DELAYACTION_H

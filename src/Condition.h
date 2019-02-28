@@ -6,7 +6,7 @@
 
 enum class InputRetention { IGNORE_INPUT, RETAIN_INPUT };
 
-template <typename EventT = string> struct Condition {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> struct Condition {
 
         using EventType = EventT;
         using Types = StateMachineTypes<EventType>;

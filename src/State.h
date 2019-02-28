@@ -30,7 +30,7 @@ inline StateFlags operator& (StateFlags lhs, StateFlags rhs)
 /**
  * @brief Stan. Uwaga, label nie może być 0.
  */
-template <typename EventT = string> class State {
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class State {
 public:
         /**
          * @brief State
