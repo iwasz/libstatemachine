@@ -17,17 +17,29 @@
 class AndCondition : public Condition {
 public:
         AndCondition (Condition *a, Condition *b) : a (a) /*, conditionAMet (false)*/, b (b) /*, conditionBMet (false)*/ {}
-        virtual ~AndCondition () {}
+        virtual ~AndCondition () override = default;
 
-        bool check (EventQueue &eventQueue, uint8_t inputNum, EventType &retainedInput) const;
-
-private:
-        bool checkImpl (EventType const &) const
+        bool getResult () const override { return a->getResult () && b->getResult (); }
+        void reset () override
         {
-                Error_Handler ();
-                return false;
+                a->reset ();
+                b->reset ();
         }
 
+        virtual bool check (EventType const &event, EventType &retainedEvent) const override
+        {
+                if (!a->getResult ()) {
+                        a->check (event, retainedEvent);
+                }
+
+                if (!b->getResult ()) {
+                        b->check (event, retainedEvent);
+                }
+
+                return getResult ();
+        }
+
+private:
         Condition *a;
         Condition *b;
 };
@@ -39,20 +51,32 @@ extern AndCondition *anded (Condition *a, Condition *b /*, ICondition *c = nullp
  */
 class SequenceCondition : public Condition {
 public:
-        SequenceCondition (Condition const &a, Condition const &b) : a (a), b (b) {}
+        SequenceCondition (Condition &a, Condition &b) : a (a), b (b) {}
         virtual ~SequenceCondition () = default;
 
-        bool check (EventQueue &eventQueue, uint8_t inputNum, EventType &retainedInput) const;
-
-private:
-        bool checkImpl (EventType const &) const
+        bool getResult () const override { return a.getResult () && b.getResult (); }
+        void reset () override
         {
-                Error_Handler ();
-                return false;
+                a.reset ();
+                b.reset ();
         }
 
-        Condition const &a;
-        Condition const &b;
+        virtual bool check (EventType const &event, EventType &retainedEvent) const override
+        {
+                if (!a.getResult ()) {
+                        a.check (event, retainedEvent);
+                }
+
+                if (a.getResult () && !b.getResult ()) {
+                        b.check (event, retainedEvent);
+                }
+
+                return getResult ();
+        }
+
+private:
+        Condition &a;
+        Condition &b;
 };
 
 extern SequenceCondition *seq (Condition const &a, Condition const &b);

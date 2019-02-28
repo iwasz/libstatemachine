@@ -16,21 +16,33 @@
  */
 class OrCondition : public Condition {
 public:
-        OrCondition (uint8_t num);
-        virtual ~OrCondition ()
-        { /* delete [] conditions */
+        OrCondition (Condition *a, Condition *b) : a (a) /*, conditionAMet (false)*/, b (b) /*, conditionBMet (false)*/ {}
+
+        bool getResult () const override { return a->getResult () || b->getResult (); }
+        void reset () override
+        {
+                a->reset ();
+                b->reset ();
         }
-        void addCondition (uint8_t i, Condition *c) { conditions[i] = c; }
+
+        virtual bool check (EventType const &event, EventType &retainedEvent) const override
+        {
+                if (!a->getResult () && !b->getResult ()) {
+                        a->check (event, retainedEvent);
+                }
+
+                if (!a->getResult () && !b->getResult ()) {
+                        b->check (event, retainedEvent);
+                }
+
+                return getResult ();
+        }
 
 private:
-        bool checkAndRetain (EventType const &event, EventType &retainedEvent) const;
-        bool checkImpl (EventType const &event) const;
-
-private:
-        Condition **conditions;
-        uint8_t numConditions;
+        Condition *a;
+        Condition *b;
 };
 
-extern OrCondition *ored (Condition *a, Condition *b, Condition *c = nullptr, Condition *d = nullptr, Condition *e = nullptr);
+extern OrCondition *ored (Condition *a, Condition *b /*, Condition *c = nullptr, Condition *d = nullptr, Condition *e = nullptr*/);
 
 #endif // ORCONDITION_H

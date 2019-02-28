@@ -17,10 +17,12 @@
 class BoolCondition : public Condition {
 public:
         BoolCondition (bool *b) : b (b) {}
-        virtual ~BoolCondition () = default;
+        virtual ~BoolCondition () override = default;
+
+protected:
+        bool checkImpl (EventType const &) const override { return *b; }
 
 private:
-        bool checkImpl (EventType const &) const { return *b; }
         bool *b;
 };
 
@@ -30,10 +32,8 @@ private:
 class TrueCondition : public Condition {
 public:
         TrueCondition (InputRetention r = IGNORE_INPUT) : Condition (r) {}
-        virtual ~TrueCondition () = default;
-
-private:
-        bool checkImpl (EventType const &) const { return true; }
+        virtual ~TrueCondition () override = default;
+        bool checkImpl (EventType const &) const override { return true; }
 };
 
 static TrueCondition alwaysTrue;
@@ -43,10 +43,9 @@ static TrueCondition alwaysTrue;
  */
 class FalseCondition : public Condition {
 public:
-        virtual ~FalseCondition () = default;
-
-private:
-        bool checkImpl (EventType const &) const { return false; }
+        // Cannot retain, so no constructor.
+        virtual ~FalseCondition () override = default;
+        bool checkImpl (EventType const &) const override { return false; }
 };
 
 #endif // CONSTCONDITION_H

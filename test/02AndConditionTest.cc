@@ -189,7 +189,6 @@ TEST_CASE ("Anded multi", "[slick]")
  * This one checks for a particular bug that I found in OrCondition when AndCondition
  * was nested inside.
  */
-#if 0
 TEST_CASE ("Faulty ored", "[AndCondition]")
 {
         gsmModemCommandsIssued.clear ();
@@ -221,17 +220,15 @@ TEST_CASE ("Faulty ored", "[AndCondition]")
         inputQueue.back () = "OK";
 
         inputQueue.push_back ();
-        inputQueue.back () = "AP+CREG";
+        inputQueue.back () = "AT+CREG";
 
         /*
          * Here it should transition to ALIVE state, but it failed due to faulty implementation.
          * Basically OrConditiopn called AndCondition::checkImpl instead of full AndCondition::check.
          */
-
         machine.run ();
         REQUIRE (machine.currentState->getLabel () == ALIVE);
 }
-#endif
 
 /**
  * The same (or very similar) bug as one above affected the AndCondition implementation.
@@ -271,7 +268,57 @@ TEST_CASE ("Faulty anded", "[AndCondition]")
         inputQueue.back () = "OK";
 
         inputQueue.push_back ();
-        inputQueue.back () = "AP+CREG";
+        inputQueue.back () = "AT+CREG";
+
+        /*
+         * Here it should transition to ALIVE state, but it failed due to faulty implementation.
+         * Basically OrConditiopn called AndCondition::checkImpl instead of full AndCondition::check.
+         */
+
+        machine.run ();
+        REQUIRE (machine.currentState->getLabel () == ALIVE);
+}
+
+/**
+ * Checks if AndCondition cares about events order. It should NOT. In previous example
+ * I put 3 events in order the condition expected (THIS, OK and AT+CREG). This time I check
+ * changed order of events.
+ */
+TEST_CASE ("And order doesn't care", "[AndCondition]")
+{
+        gsmModemCommandsIssued.clear ();
+
+        StateMachine machine;
+        auto &inputQueue = machine.getEventQueue ();
+
+        machine.state (INITIAL, State::INITIAL)
+                ->entry (gsm ("INITIAL ENTRY"))
+                ->transition (ALIVE)
+                ->when (anded (eq ("THIS"), anded (eq ("OK"), eq ("AT+CREG"))));
+
+        machine.state (ALIVE)->entry (gsm ("ALIVE ENTRY"));
+
+        /*---------------------------------------------------------------------------*/
+        /* Uruchamiamy urządzenie                                                    */
+        /*---------------------------------------------------------------------------*/
+
+        // Przejdzie to initial State (initial Transition).
+        machine.run ();
+        REQUIRE (machine.currentState->getLabel () == INITIAL);
+
+        REQUIRE (gsmModemCommandsIssued.size () == 0);
+        machine.run ();
+        REQUIRE (gsmModemCommandsIssued.size () == 1);
+        REQUIRE (gsmModemCommandsIssued[0] == "INITIAL ENTRY");
+
+        inputQueue.push_back ();
+        inputQueue.back () = "OK";
+
+        inputQueue.push_back ();
+        inputQueue.back () = "AT+CREG";
+
+        inputQueue.push_back ();
+        inputQueue.back () = "THIS";
 
         /*
          * Here it should transition to ALIVE state, but it failed due to faulty implementation.

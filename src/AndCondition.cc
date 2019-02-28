@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 
+#if 0
 bool AndCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &retainedInput) const
 {
         bool conditionAMet = false;
@@ -23,7 +24,7 @@ bool AndCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &r
                 while (i < inputNum && (el = &eventQueue.front (i++)) && (!conditionAMet || !conditionBMet)) {
 
                         if (a && !conditionAMet) {
-                                conditionAMet = a->checkAndRetain (*el, retainedInput);
+                                conditionAMet = a->check (*el, retainedInput);
 #if 0 & !defined(UNIT_TEST)
                                 if (conditionAMet) {
                                         printf ("conditionAMet : [%s]\n", el->data);
@@ -32,7 +33,7 @@ bool AndCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &r
                         }
 
                         if (b && !conditionBMet) {
-                                conditionBMet = b->checkAndRetain (*el, retainedInput);
+                                conditionBMet = b->check (*el, retainedInput);
 #if 0 & !defined(UNIT_TEST)
                                 if (conditionBMet) {
                                         printf ("condition[B]Met : [%s]\n", el->data);
@@ -43,11 +44,11 @@ bool AndCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &r
         }
         else {
                 if (a && !conditionAMet) {
-                        conditionAMet = a->checkAndRetain (EventType (), retainedInput);
+                        conditionAMet = a->check (EventType (), retainedInput);
                 }
 
                 if (b && !conditionBMet) {
-                        conditionBMet = b->checkAndRetain (EventType (), retainedInput);
+                        conditionBMet = b->check (EventType (), retainedInput);
                 }
         }
 
@@ -58,6 +59,7 @@ bool AndCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &r
 
         return false;
 }
+#endif
 
 /*****************************************************************************/
 
@@ -65,6 +67,7 @@ AndCondition *anded (Condition *a, Condition *b /*, ICondition *c, ICondition *d
 
 /*****************************************************************************/
 
+#if 0
 bool SequenceCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &retainedInput) const
 {
         bool conditionAMet = false;
@@ -77,7 +80,7 @@ bool SequenceCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventTy
                 while (i < inputNum && (el = &eventQueue.front (i++)) && (!conditionAMet || !conditionBMet)) {
 
                         if (!conditionAMet) {
-                                conditionAMet = a.checkAndRetain (*el, retainedInput);
+                                conditionAMet = a.check (*el, retainedInput);
 #if 0 & !defined(UNIT_TEST)
                                 if (conditionAMet) {
                                         printf ("conditionAMet : [%s]\n", el->data);
@@ -86,7 +89,7 @@ bool SequenceCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventTy
                         }
 
                         if (conditionAMet && !conditionBMet) {
-                                conditionBMet = b.checkAndRetain (*el, retainedInput);
+                                conditionBMet = b.check (*el, retainedInput);
 #if 0 & !defined(UNIT_TEST)
                                 if (conditionBMet) {
                                         printf ("condition[B]Met : [%s]\n", el->data);
@@ -97,11 +100,11 @@ bool SequenceCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventTy
         }
         else {
                 if (!conditionAMet) {
-                        conditionAMet = a.checkAndRetain (EventType (), retainedInput);
+                        conditionAMet = a.check (EventType (), retainedInput);
                 }
 
                 if (conditionAMet && !conditionBMet) {
-                        conditionBMet = b.checkAndRetain (EventType (), retainedInput);
+                        conditionBMet = b.check (EventType (), retainedInput);
                 }
         }
 
@@ -112,7 +115,8 @@ bool SequenceCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventTy
 
         return false;
 }
+#endif
 
 /*****************************************************************************/
 
-SequenceCondition *seq (Condition const &a, Condition const &b) { return new SequenceCondition (a, b); }
+SequenceCondition *seq (Condition &a, Condition &b) { return new SequenceCondition (a, b); }

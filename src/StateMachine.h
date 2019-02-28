@@ -206,6 +206,9 @@ public:
         void addGlobalTransition (Transition *t, Transition::Type run = Transition::RUN_LAST);
 
 private:
+        bool check (Condition &condition, uint8_t inputNum, EventType &retainedInput);
+
+private:
         State *lastAddedState;
         Transition *lastAddedTransition;
         Transition *lastAddedTransitionRF;
@@ -221,7 +224,7 @@ public:
         void pushBackAction (Action *a);
         bool fireActions ();
         bool fixCurrentState ();
-        Transition *findTransition (uint8_t noOfInputs);
+        Transition *findTransition ();
         void performTransition (Transition *t);
 
         enum Error {
@@ -241,11 +244,11 @@ public:
 private:
 #endif
 
-        EventQueue eventQueue;
         State *initialState;
         State *currentState;
         Transition *firstTransitionRL; /// Run last
         Transition *firstTransitionRF; /// Run First
+        EventQueue eventQueue;
         State *states[MAX_STATES_NUM];
         // Z kolejki jest kopiowane tutaj kiedy warunek zostanie spełniony i ma ustawione RETAIN
         EventType inputCopy;

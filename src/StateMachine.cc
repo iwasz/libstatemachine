@@ -57,12 +57,40 @@ bool StateMachine::fixCurrentState ()
 
 /*****************************************************************************/
 
-Transition *StateMachine::findTransition (uint8_t noOfInputs)
+bool StateMachine::check (Condition &condition, uint8_t inputNum, EventType &retainedInput)
+{
+        /*
+         * Conditions are stateful i.e. they remember the result of last check,
+         * so here we reset their state.
+         */
+        condition.reset ();
+
+        if (eventQueue.size ()) {
+
+                /*
+                 * If state wouldn't be persisted, then
+                 */
+                for (int i = 0; i < inputNum; ++i) {
+                        if (condition.check (eventQueue.front (i), retainedInput)) {
+                                break;
+                        }
+                }
+        }
+        else {
+                condition.check (EventType (), retainedInput);
+        }
+
+        return condition.getResult ();
+}
+
+/*****************************************************************************/
+
+Transition *StateMachine::findTransition ()
 {
         Transition *ret = nullptr;
         enum Stage { FIRSTS, REGULARS, LASTS };
         Stage stage;
-        Transition *t;
+        Transition *t = nullptr;
         bool suppressGlobalTransitions = currentState->getFlags () & State::SUPPRESS_GLOBAL_TRANSITIONS;
 
         if (suppressGlobalTransitions) {
@@ -74,9 +102,19 @@ Transition *StateMachine::findTransition (uint8_t noOfInputs)
                 t = firstTransitionRF;
         }
 
+#ifndef UNIT_TEST
+        __disable_irq ();
+#endif
+
+        uint8_t noOfInputs = (useOnlyOneInputAtATime) ? (1) : (eventQueue.size ());
+
+#ifndef UNIT_TEST
+        __enable_irq ();
+#endif
+
         while (1) {
 
-                if (!t || !t->getCondition () || !t->getCondition ()->check (eventQueue, noOfInputs, inputCopy)) {
+                if (!t || !t->getCondition () || !check (*t->getCondition (), noOfInputs, inputCopy)) {
 
                         if (t) {
                                 t = t->next;
@@ -103,6 +141,21 @@ Transition *StateMachine::findTransition (uint8_t noOfInputs)
                         break;
                 }
         }
+
+#ifndef UNIT_TEST
+        __disable_irq ();
+#endif
+
+        //        for (int i = 0; i < noOfInputs; ++i) {
+        //                // I call "from_isr" version because I lock by myself.
+        //                eventQueue.pop_from_isr ();
+        //        }
+
+        eventQueue.pop_front (noOfInputs);
+
+#ifndef UNIT_TEST
+        __enable_irq ();
+#endif
 
         return ret;
 }
@@ -161,36 +214,11 @@ void StateMachine::run ()
                 return;
         }
 
-#ifndef UNIT_TEST
-        __disable_irq ();
-#endif
-
-        uint8_t noOfInputs = (useOnlyOneInputAtATime) ? (1) : (eventQueue.size ());
-
-#ifndef UNIT_TEST
-        __enable_irq ();
-#endif
-
-        Transition *t = findTransition (noOfInputs);
+        Transition *t = findTransition ();
 
         if (!t) {
                 return;
         }
-
-#ifndef UNIT_TEST
-        __disable_irq ();
-#endif
-
-        //        for (int i = 0; i < noOfInputs; ++i) {
-        //                // I call "from_isr" version because I lock by myself.
-        //                eventQueue.pop_from_isr ();
-        //        }
-
-        eventQueue.pop_front (noOfInputs);
-
-#ifndef UNIT_TEST
-        __enable_irq ();
-#endif
 
         performTransition (t);
 

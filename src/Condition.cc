@@ -9,6 +9,7 @@
 #include "Condition.h"
 #include <cstring>
 
+#if 0
 bool Condition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &retainedInput) const
 {
 //        bool conditionMet = false;
@@ -32,16 +33,17 @@ bool Condition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &reta
 //        return conditionMet;
         return false;
 }
+#endif
 
 /*****************************************************************************/
 
-bool Condition::checkAndRetain (EventType const &event, EventType &retainedEvent) const
+bool Condition::check (EventType const &event, EventType &retainedEvent) const
 {
-        bool conditionMet = checkImpl (event);
+        result = checkImpl (event);
 
-        if (conditionMet && retainInput) {
+        if (result && retainInput) {
                 retainedEvent = event;
         }
 
-        return conditionMet;
+        return result;
 }

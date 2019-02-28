@@ -22,9 +22,8 @@ struct Condition {
          * @param inputConsumed
          * @return
          */
-        virtual bool check (EventQueue &eventQueue, uint8_t inputNum, EventType &retainedInput) const;
+        //        virtual bool check (EventQueue &eventQueue, uint8_t inputNum, EventType &retainedInput) const;
 
-protected:
         /**
          * @brief Wywołuje check i kopiuje input jeśli retainInput == true
          * @param data
@@ -32,21 +31,21 @@ protected:
          * @param inputConsumed
          * @return
          */
-        virtual bool checkAndRetain (EventType const &event, EventType &retainedEvent) const;
+        virtual bool check(EventType const &event, EventType &retainedEvent) const;
+        virtual bool getResult () const { return result; }
+        virtual void reset () { result = false; }
 
+protected:
         /**
          * @brief Sprawdza jakiś warunek.
          * @param data Dane wejściowe z kolejki.
          * @return Czy warunek jest spełniony
          */
-        virtual bool checkImpl (EventType const &event) const = 0;
+        virtual bool checkImpl (EventType const &event) const { return false; }
 
-        friend class NotCondition;
-        friend class AndCondition;
-        friend class OrCondition;
-        friend class SequenceCondition;
-
+private:
         InputRetention retainInput;
+        mutable bool result = false;
 };
 
 ///**

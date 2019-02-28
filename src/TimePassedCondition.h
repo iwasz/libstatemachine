@@ -14,7 +14,7 @@ public:
         TimePassedCondition (uint16_t m, TimeCounter *s) : msPassed (m), timeCounter (s) {}
         virtual ~TimePassedCondition () = default;
 
-private:
+protected:
         bool checkImpl (EventType const &event) const;
 
 private:
