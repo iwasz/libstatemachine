@@ -16,11 +16,6 @@
 #define SYNCHRO_MODULO 2
 
 /**
- * @brief Typ kolejki akcji. Maszyna odkłada na taką kolejkę akcje entry, exit i transition.
- */
-typedef Queue<Action *> ActionQueue;
-
-/**
  * @brief The StateMachine class
  * TODO Dodać globalny timeout. Jeśli w danym timeoucie nie uda się zmienić stanu, to trzeba podjąć jakąć
  * akcję. Ej to chyba jest!
@@ -28,30 +23,6 @@ typedef Queue<Action *> ActionQueue;
  * TODO dokumentacja z tutorialem jest niezbędna, bo ja sam mam czasem problemy. Jak są ewaluowane warunki,
  * co do nich wpada, w jakiej kolejności i tak dalej. Opisać wszystkie aspekty działania : jak dwie maszyny
  * mogą pracować na jedym input/output i tak dalej.
- *
- *
- *
- * TODO OrCondition i w ogóle API Condition ma poważny błąd. Usecase, żeby powtórzyć: Warunek:
- *
- * m->state (CONNECT_TO_SERVER)->entry (at ("AT+CIPSTART=0,\"TCP\",\"trackmatevm.cloudapp.net\",1883\r\n"))
- *     ->transition (NETWORK_ECHO_OFF)->when (ored (anded (like ("%,CONNECT"), &ok), eq ("CONNECT OK")))->then (&delay);
- *
- * Przychodzą dane i kolejka wejściowa zawiera następujące dane:
- * - OK
- * - 0,CONNECT
- * - CIPSTART cośtam
- *
- * Maszyna nie przechodzi do stanu NETWORK_ECHO_OFF. Problem polega na tym, że OrCondition wywołuje medodę checkAndRetain
- * swoich dwóch warunków, a w przypadku AndCondition checkAndRetain nie robi NIC! Prawdziwa implementacja jest w przedefiniowanycm
- * check. Moim zdaniem checkImpl i checkAndRetain powinny być prywatne, a jedynym słusznym api powinno być check.
- *
- * TODO Dodatkowo do tego co wyżej, to trzeba zrobić unit test warunku anded (a, anded (b, c)), bo mi się, wydaje, że to
- * nie zadziała!
- *
- * TODO checkImpl i checkRetained powinny być prywatne i nie powinno być friendów moim zdaniem. Rekurencyjne
- * warunki jak And i Or powinny jakoś używać głownej metody check. Tylko wtedy będzie problem z sekwencją.
- *
- *
  *
  * TODO opisać, że zawsze trzeba pamiętyać czy jest odpowiednia ilość czasu na sprawdzenie warunków. Podać taki przykład:
  * Kiedy jest jeden warunek na przejście, który oczekuje jakichś danych, to nie ma problemu. Na przykład :
@@ -134,12 +105,21 @@ typedef Queue<Action *> ActionQueue;
  * danych to będzie problem (przydał by się CircularBuffer). Natomiast w przypadku próby odbierania całego firmware,
  * to już w ogóle będzie masakra (bo wtedy MySink musiałby kopiowac dane do jakiegoś mega bufora, albo wręcz nagrywać
  * je bezpośrednio na flash).
+ *
+ * TODO Pousuwać konstruktyory i metody, których nie używam w ogóle.
+ *
+ * TODO Zależność od libmicro dać jako opcję (ifdef)
  */
-class StateMachine {
+template <typename EventT = string> class StateMachine {
 public:
-        using EventType = string;
+        using EventType = EventT;
         using Types = StateMachineTypes<EventType>;
-        using EventQueue = Types::EventQueue;
+        using EventQueue = typename Types::EventQueue;
+        using ActionType = Action<EventType>;
+        using ActionQueue = Queue<ActionType *>; // Typ kolejki akcji. Maszyna odkłada na taką kolejkę akcje entry, exit i transition.
+        using StateType = State<EventType>;
+        using ConditionType = Condition<EventType>;
+        using TransitionType = Transition<EventType>;
 
         StateMachine (uint32_t logId = 0, bool useOnlyOneInputAtATime = false)
             : lastAddedState (nullptr),
@@ -186,34 +166,36 @@ public:
 
         void setTimeCounter (TimeCounter *value) { timeCounter = value; }
 
-        StateMachine *state (uint8_t label, uint8_t flags = State::NONE); /// Nowy stan o nazwie label.
-        StateMachine *entry (Action *action);                             /// Entry action do ostatnio dodanego stanu.
-        StateMachine *exit (Action *action);                              /// Exit action do ostatnio dodanego stanu.
+        StateMachine *state (uint8_t label, StateFlags flags = StateFlags::NONE); /// Nowy stan o nazwie label.
+        StateMachine *entry (ActionType *action);                                 /// Entry action do ostatnio dodanego stanu.
+        StateMachine *exit (ActionType *action);                                  /// Exit action do ostatnio dodanego stanu.
         StateMachine *transition (uint8_t to,
-                                  Transition::Type run = Transition::RUN_LAST); /// Przejście z ostatnio dodanego stanu do stanu o nazwie "to".
-        StateMachine *when (Condition *cond);                                   /// Warunek do ostatnio dodanego przejścia (transition).
+                                  typename TransitionType::Type run
+                                  = TransitionType::RUN_LAST); /// Przejście z ostatnio dodanego stanu do stanu o nazwie "to".
+
+        StateMachine *when (ConditionType *cond); /// Warunek do ostatnio dodanego przejścia (transition).
         //        template <typename Func> StateMachine *whenf (Func func) { return when (new FuncCondition<Func> (func)); }
 
-        StateMachine *then (Action *action); /// Akcja do ostatnio dodanego przejścia (transition).
+        StateMachine *then (ActionType *action); /// Akcja do ostatnio dodanego przejścia (transition).
         //        template <typename Func> StateMachine *thenf (Func func) { return then (new FuncAction<Func> (func)); }
 
         EventQueue &getEventQueue () { return eventQueue; }
         EventQueue const &getEventQueue () const { return eventQueue; }
 
-        void setInitialState (State *s);
+        void setInitialState (StateType *s);
         void setInitialState (uint8_t stateLabel);
-        void addState (State *s);
-        void addGlobalTransition (Transition *t, Transition::Type run = Transition::RUN_LAST);
+        void addState (StateType *s);
+        void addGlobalTransition (TransitionType *t, typename TransitionType::Type run = TransitionType::RUN_LAST);
 
 private:
-        bool check (Condition &condition, uint8_t inputNum, EventType &retainedInput);
+        bool check (ConditionType &condition, uint8_t inputNum, EventType &retainedInput);
 
 private:
-        State *lastAddedState;
-        Transition *lastAddedTransition;
-        Transition *lastAddedTransitionRF;
-        Transition *lastAddedTransitionRL;
-        Action *lastAddedAction;
+        StateType *lastAddedState;
+        TransitionType *lastAddedTransition;
+        TransitionType *lastAddedTransitionRF;
+        TransitionType *lastAddedTransitionRL;
+        ActionType *lastAddedAction;
 
 #ifndef UNIT_TEST
 private:
@@ -221,11 +203,11 @@ private:
 public:
 #endif
 
-        void pushBackAction (Action *a);
+        void pushBackAction (ActionType *a);
         bool fireActions ();
         bool fixCurrentState ();
-        Transition *findTransition ();
-        void performTransition (Transition *t);
+        TransitionType *findTransition ();
+        void performTransition (TransitionType *t);
 
         enum Error {
                 INPUT_QUEUE_EMPTY,
@@ -244,12 +226,12 @@ public:
 private:
 #endif
 
-        State *initialState;
-        State *currentState;
-        Transition *firstTransitionRL; /// Run last
-        Transition *firstTransitionRF; /// Run First
+        StateType *initialState;
+        StateType *currentState;
+        TransitionType *firstTransitionRL; /// Run last
+        TransitionType *firstTransitionRF; /// Run First
         EventQueue eventQueue;
-        State *states[MAX_STATES_NUM];
+        StateType *states[MAX_STATES_NUM];
         // Z kolejki jest kopiowane tutaj kiedy warunek zostanie spełniony i ma ustawione RETAIN
         EventType inputCopy;
         ActionQueue actionQueue;
@@ -267,6 +249,456 @@ private:
          */
         bool useOnlyOneInputAtATime;
 };
+
+/*****************************************************************************/
+
+template <typename EventT> bool StateMachine<EventT>::fireActions ()
+{
+        while (actionQueue.size ()) {
+                ActionType *op = actionQueue.front ();
+                bool finished = op->run (inputCopy);
+
+                if (!finished) {
+                        return false;
+                }
+                else {
+                        actionQueue.pop_front ();
+                }
+        }
+
+        return true;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> bool StateMachine<EventT>::fixCurrentState ()
+{
+        if (!currentState) {
+                currentState = initialState;
+
+#ifndef UNIT_TEST
+                uint8_t currentLabel = currentState->getLabel ();
+                debug->print ("fixCurrentState : ");
+                debug->println (currentLabel);
+#endif
+
+                if (timeCounter) {
+                        timeCounter->set ();
+                }
+
+                pushBackAction (currentState->getEntryAction ());
+                return false;
+        }
+
+        return true;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> bool StateMachine<EventT>::check (ConditionType &condition, uint8_t inputNum, EventType &retainedInput)
+{
+        /*
+         * Conditions are stateful i.e. they remember the result of last check,
+         * so here we reset their state.
+         */
+        condition.reset ();
+
+        if (eventQueue.size ()) {
+
+                /*
+                 * If state wouldn't be persisted, then
+                 */
+                for (int i = 0; i < inputNum; ++i) {
+                        if (condition.check (eventQueue.front (i), retainedInput)) {
+                                break;
+                        }
+                }
+        }
+        else {
+                condition.check (EventType (), retainedInput);
+        }
+
+        return condition.getResult ();
+}
+
+/*****************************************************************************/
+
+template <typename EventT> typename StateMachine<EventT>::TransitionType *StateMachine<EventT>::findTransition ()
+{
+        TransitionType *ret = nullptr;
+        enum Stage { FIRSTS, REGULARS, LASTS };
+        Stage stage;
+        TransitionType *t = nullptr;
+        bool suppressGlobalTransitions
+                = (currentState->getFlags () & StateFlags::SUPPRESS_GLOBAL_TRANSITIONS) == StateFlags::SUPPRESS_GLOBAL_TRANSITIONS;
+
+        if (suppressGlobalTransitions) {
+                stage = REGULARS;
+                t = currentState->getFirstTransition ();
+        }
+        else {
+                stage = FIRSTS;
+                t = firstTransitionRF;
+        }
+
+#ifndef UNIT_TEST
+        __disable_irq ();
+#endif
+
+        uint8_t noOfInputs = (useOnlyOneInputAtATime) ? (1) : (eventQueue.size ());
+
+#ifndef UNIT_TEST
+        __enable_irq ();
+#endif
+
+        while (1) {
+
+                if (!t || !t->getCondition () || !check (*t->getCondition (), noOfInputs, inputCopy)) {
+
+                        if (t) {
+                                t = t->next;
+                        }
+
+                        if (!t) {
+                                if (stage == FIRSTS) {
+                                        t = currentState->getFirstTransition ();
+                                        stage = REGULARS;
+                                        continue;
+                                }
+                                else if (stage == REGULARS && !suppressGlobalTransitions) {
+                                        t = firstTransitionRL;
+                                        stage = LASTS;
+                                        continue;
+                                }
+                                else {
+                                        break;
+                                }
+                        }
+                }
+                else {
+                        ret = t;
+                        break;
+                }
+        }
+
+#ifndef UNIT_TEST
+        __disable_irq ();
+#endif
+
+        //        for (int i = 0; i < noOfInputs; ++i) {
+        //                // I call "from_isr" version because I lock by myself.
+        //                eventQueue.pop_from_isr ();
+        //        }
+
+        eventQueue.pop_front (noOfInputs);
+
+#ifndef UNIT_TEST
+        __enable_irq ();
+#endif
+
+        return ret;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::performTransition (TransitionType *t)
+{
+        // Jeżeli spełniony, to przejdź wykonując akcje:
+        // - exit dla aktualnego
+        pushBackAction (currentState->getExitAction ());
+        // - transition dla przejscia
+        pushBackAction (t->getAction ());
+        // - Entry.
+        currentState = states[t->getTo ()];
+
+        if (!currentState) {
+                errorCondition (NO_SUCH_STATE);
+        }
+
+#ifndef UNIT_TEST
+        uint8_t currentLabel = currentState->getLabel ();
+        debug->print ("transition : ");
+        debug->println (currentLabel);
+#endif
+
+        if (timeCounter) {
+                timeCounter->set ();
+        }
+
+        pushBackAction (currentState->getEntryAction ());
+#if 1
+//        debugLedToggle ();
+#endif
+}
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::run ()
+{
+        if (synchroCounter && *synchroCounter % SYNCHRO_MODULO != synchroModulo) {
+                return;
+        }
+
+        // Najpierw uruchom wszystkie akcje
+        if (!fireActions ()) {
+                return;
+        }
+
+        /*
+         * Wykonaj initialTransition. Ona nie powoduje zdjęcia z kolejki wejściowej, bo
+         * dokonuje się automatycznie, bez względu na dane wejściowe (w przeciwieństwie
+         * do każdej innej tranzycji).
+         */
+        if (!fixCurrentState ()) {
+                return;
+        }
+
+        TransitionType *t = findTransition ();
+
+        if (!t) {
+                return;
+        }
+
+        performTransition (t);
+
+        if (currentState && ((currentState->getFlags () & StateFlags::INC_SYNCHRO) == StateFlags::INC_SYNCHRO)) {
+                // printf ("pre inc SC = %d, SM = %d\n", (int)*synchroCounter, (int)synchroModulo);
+                ++*synchroCounter;
+        }
+
+        /*
+         * Uwaga, tu kolejka input powinna być wyczyszczona przez sprawdzanie warunków przejść powyżej.
+         * Jeżeli nie jest, to znaczy, że warunki tak zostały skonstruowane, że coś zostaje (czyli zaakceptowano
+         * wejście z początku, nie sprawdzając pozostałych). Jeżeli to nie było zamieżone, to należy przerobić
+         * warunki tak, żeby obejmowały wszystkie przypadki (można użyć anded i ored).
+         */
+}
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::setInitialState (StateType *s) { initialState = s; }
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::setInitialState (uint8_t stateLabel) { initialState = states[stateLabel]; }
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::addGlobalTransition (TransitionType *t, typename TransitionType::Type run)
+{
+        if (run == TransitionType::RUN_LAST) {
+                if (!lastAddedTransitionRL) {
+                        firstTransitionRL = lastAddedTransitionRL = lastAddedTransition = t;
+                }
+                else {
+                        lastAddedTransitionRL->next = t;
+                        lastAddedTransitionRL = lastAddedTransition = t;
+                }
+        }
+        else {
+                if (!lastAddedTransitionRF) {
+                        firstTransitionRF = lastAddedTransitionRF = lastAddedTransition = t;
+                }
+                else {
+                        lastAddedTransitionRF->next = t;
+                        lastAddedTransitionRF = lastAddedTransition = t;
+                }
+        }
+}
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::addState (StateType *s)
+{
+        if (s->getLabel () >= MAX_STATES_NUM) {
+                errorCondition (STATES_ARRAY_FULL);
+        }
+
+        states[s->getLabel ()] = s;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::pushBackAction (ActionType *a)
+{
+        if (!a) {
+                return;
+        }
+
+        //        do {
+        //                pushBackOperation (a);
+        if (!actionQueue.push_back ()) {
+                errorCondition (OPERATION_QUEUE_FULL);
+        }
+
+        typename ActionQueue::Element &el = actionQueue.back ();
+        el = a;
+        //        } while ((a = a->getNext ()));
+}
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::errorCondition (Error e)
+{
+        while (true) {
+        }
+}
+
+/*****************************************************************************/
+
+template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::state (uint8_t label, StateFlags flags)
+{
+        lastAddedState = new StateType (label);
+        lastAddedState->setFlags (flags);
+        addState (lastAddedState);
+
+        if ((flags & StateFlags::INITIAL) == StateFlags::INITIAL) {
+                setInitialState (lastAddedState);
+        }
+
+        return this;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::entry (ActionType *action)
+{
+        if (!lastAddedState) {
+                errorCondition (NO_LAST_ADDED_STATE);
+        }
+
+        lastAddedAction = action;
+        lastAddedState->setEntryAction (action);
+        return this;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::exit (ActionType *action)
+{
+        if (!lastAddedState) {
+                errorCondition (NO_LAST_ADDED_STATE);
+        }
+
+        lastAddedAction = action;
+        lastAddedState->setExitAction (action);
+        return this;
+}
+
+/*****************************************************************************/
+
+// StateMachine *StateMachine<EventT>::and_action (ActionType *action)
+//{
+//        if (!lastAddedAction) {
+//                errorCondition (NO_LAST_ADDED_ACTION);
+//        }
+
+//        lastAddedAction->setNext (action);
+//        lastAddedAction = action;
+//        return this;
+//}
+
+/*****************************************************************************/
+
+template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::transition (uint8_t to, typename TransitionType::Type run)
+{
+        if (!lastAddedState) {
+                // errorCondition (NO_LAST_ADDED_STATE);
+                addGlobalTransition (new TransitionType (nullptr, to), run);
+        }
+        else {
+                lastAddedTransition = new TransitionType (nullptr, to);
+                lastAddedState->addTransition (lastAddedTransition);
+        }
+        return this;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::when (ConditionType *cond)
+{
+        if (!lastAddedTransition) {
+                errorCondition (NO_LAST_ADDED_TRANSITION);
+        }
+
+        lastAddedTransition->setCondition (cond);
+        return this;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::then (ActionType *action)
+{
+        if (!lastAddedTransition) {
+                errorCondition (NO_LAST_ADDED_TRANSITION);
+        }
+
+        lastAddedTransition->setAction (action);
+        lastAddedAction = action;
+        return this;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::reset (/*uint8_t state*/)
+{
+#ifndef UNIT_TEST
+        __disable_irq ();
+#endif
+
+        eventQueue.clear ();
+
+#ifndef UNIT_TEST
+        __enable_irq ();
+#endif
+
+        currentState = nullptr;
+
+        // Przez to TimeCountery wariowały. Ticket #83
+        // if (timeCounter) {
+        //         timeCounter->reset ();
+        // }
+
+        inputCopy[0] = '\0';
+        actionQueue.clear ();
+}
+
+/*****************************************************************************/
+
+template <typename EventT> uint8_t StateMachine<EventT>::getCurrentStateLabel () const
+{
+        if (currentState) {
+                return currentState->getLabel ();
+        }
+        else {
+                return 0;
+        }
+}
+
+/*
+ * Fixed bugs:
+ *
+ * TODO OrCondition i w ogóle API Condition ma poważny błąd. Usecase, żeby powtórzyć: Warunek:
+ *
+ * m->state (CONNECT_TO_SERVER)->entry (at ("AT+CIPSTART=0,\"TCP\",\"trackmatevm.cloudapp.net\",1883\r\n"))
+ *     ->transition (NETWORK_ECHO_OFF)->when (ored (anded (like ("%,CONNECT"), &ok), eq ("CONNECT OK")))->then (&delay);
+ *
+ * Przychodzą dane i kolejka wejściowa zawiera następujące dane:
+ * - OK
+ * - 0,CONNECT
+ * - CIPSTART cośtam
+ *
+ * Maszyna nie przechodzi do stanu NETWORK_ECHO_OFF. Problem polega na tym, że OrCondition wywołuje medodę checkAndRetain
+ * swoich dwóch warunków, a w przypadku AndCondition checkAndRetain nie robi NIC! Prawdziwa implementacja jest w przedefiniowanycm
+ * check. Moim zdaniem checkImpl i checkAndRetain powinny być prywatne, a jedynym słusznym api powinno być check.
+ *
+ * TODO Dodatkowo do tego co wyżej, to trzeba zrobić unit test warunku anded (a, anded (b, c)), bo mi się, wydaje, że to
+ * nie zadziała!
+ *
+ * TODO checkImpl i checkRetained powinny być prywatne i nie powinno być friendów moim zdaniem. Rekurencyjne
+ * warunki jak And i Or powinny jakoś używać głownej metody check. Tylko wtedy będzie problem z sekwencją.
+ *
+ */
 
 //}
 

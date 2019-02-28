@@ -11,6 +11,8 @@
 
 enum MyStates { INITIAL, ALIVE, POWER_DOWN, X, Y, Z };
 
+// using StateMachine = StateMachine<string>;
+
 /**
  *
  */
@@ -25,7 +27,7 @@ TEST_CASE ("Ored, anded", "[AndCondition]")
         bool cond = false;
         BoolCondition fakeCond (&cond);
 
-        machine.state (INITIAL, true)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (anded (eq ("OK"), &fakeCond));
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (anded (eq ("OK"), &fakeCond));
         machine.state (ALIVE)->entry (gsm ("ALIVE ENTRY"))->exit (gsm ("ALIVE EXIT"))->transition (ALIVE)->when (ored (eq ("HEJ"), eq ("HOPS")));
 
         /*---------------------------------------------------------------------------*/
@@ -125,7 +127,10 @@ TEST_CASE ("Anded multi", "[slick]")
         bool cond = false;
         BoolCondition fakeCond (&cond);
 
-        machine.state (INITIAL, true)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (anded (eq ("OK"), eq ("AT+CREG")));
+        machine.state (INITIAL, StateFlags::INITIAL)
+                ->entry (gsm ("INITIAL ENTRY"))
+                ->transition (ALIVE)
+                ->when (anded (eq ("OK"), eq ("AT+CREG")));
         machine.state (ALIVE)->entry (gsm ("ALIVE ENTRY"));
 
         /*---------------------------------------------------------------------------*/
@@ -196,7 +201,7 @@ TEST_CASE ("Faulty ored", "[AndCondition]")
         StateMachine machine;
         auto &inputQueue = machine.getEventQueue ();
 
-        machine.state (INITIAL, State::INITIAL)
+        machine.state (INITIAL, StateFlags::INITIAL)
                 ->entry (gsm ("INITIAL ENTRY"))
                 ->transition (ALIVE)
                 ->when (ored (anded (eq ("OK"), eq ("AT+CREG")), eq ("OR_THIS")));
@@ -241,7 +246,7 @@ TEST_CASE ("Faulty anded", "[AndCondition]")
         StateMachine machine;
         auto &inputQueue = machine.getEventQueue ();
 
-        machine.state (INITIAL, State::INITIAL)
+        machine.state (INITIAL, StateFlags::INITIAL)
                 ->entry (gsm ("INITIAL ENTRY"))
                 ->transition (ALIVE)
                 ->when (anded (eq ("THIS"), anded (eq ("OK"), eq ("AT+CREG"))));
@@ -291,7 +296,7 @@ TEST_CASE ("And order doesn't care", "[AndCondition]")
         StateMachine machine;
         auto &inputQueue = machine.getEventQueue ();
 
-        machine.state (INITIAL, State::INITIAL)
+        machine.state (INITIAL, StateFlags::INITIAL)
                 ->entry (gsm ("INITIAL ENTRY"))
                 ->transition (ALIVE)
                 ->when (anded (eq ("THIS"), anded (eq ("OK"), eq ("AT+CREG"))));

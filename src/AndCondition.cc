@@ -63,7 +63,7 @@ bool AndCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventType &r
 
 /*****************************************************************************/
 
-AndCondition *anded (Condition *a, Condition *b /*, ICondition *c, ICondition *d, ICondition *e*/) { return new AndCondition (a, b); }
+//AndCondition *anded (Condition *a, Condition *b /*, ICondition *c, ICondition *d, ICondition *e*/) { return new AndCondition (a, b); }
 
 /*****************************************************************************/
 
@@ -119,4 +119,4 @@ bool SequenceCondition::check (EventQueue &eventQueue, uint8_t inputNum, EventTy
 
 /*****************************************************************************/
 
-SequenceCondition *seq (Condition &a, Condition &b) { return new SequenceCondition (a, b); }
+//SequenceCondition *seq (Condition &a, Condition &b) { return new SequenceCondition (a, b); }

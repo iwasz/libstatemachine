@@ -14,9 +14,11 @@
 /**
  * @brief Jak nazwa wskazuje.
  */
-class AndCondition : public Condition {
+template <typename EventT = string> class AndCondition : public Condition<EventT> {
 public:
-        AndCondition (Condition *a, Condition *b) : a (a) /*, conditionAMet (false)*/, b (b) /*, conditionBMet (false)*/ {}
+        using EventType = EventT;
+
+        AndCondition (Condition<EventType> *a, Condition<EventType> *b) : a (a), b (b) {}
         virtual ~AndCondition () override = default;
 
         bool getResult () const override { return a->getResult () && b->getResult (); }
@@ -40,18 +42,25 @@ public:
         }
 
 private:
-        Condition *a;
-        Condition *b;
+        Condition<EventType> *a;
+        Condition<EventType> *b;
 };
 
-extern AndCondition *anded (Condition *a, Condition *b /*, ICondition *c = nullptr, ICondition *d = nullptr, ICondition *e = nullptr*/);
+/*****************************************************************************/
+
+template <typename EventT = string> AndCondition<EventT> *anded (Condition<EventT> *a, Condition<EventT> *b)
+{
+        return new AndCondition<EventT> (a, b);
+}
 
 /**
  * Sequence is like AndCondition, but inputs must fulfill conditions in order.
  */
-class SequenceCondition : public Condition {
+template <typename EventT = string> class SequenceCondition : public Condition<EventT> {
 public:
-        SequenceCondition (Condition &a, Condition &b) : a (a), b (b) {}
+        using EventType = EventT;
+
+        SequenceCondition (Condition<EventT> &a, Condition<EventT> &b) : a (a), b (b) {}
         virtual ~SequenceCondition () = default;
 
         bool getResult () const override { return a.getResult () && b.getResult (); }
@@ -75,9 +84,13 @@ public:
         }
 
 private:
-        Condition &a;
-        Condition &b;
+        Condition<EventType> &a;
+        Condition<EventType> &b;
 };
 
-extern SequenceCondition *seq (Condition const &a, Condition const &b);
+template <typename EventT = string> SequenceCondition<EventT> *seq (Condition<EventT> &a, Condition<EventT> &b)
+{
+        return new SequenceCondition<EventT> (a, b);
+}
+
 #endif // ANDCONDITION_H

@@ -34,24 +34,24 @@
 
 /*****************************************************************************/
 
-OrCondition *ored (Condition *a, Condition *b/*, Condition *c, Condition *d, Condition *e*/)
-{
-//        OrCondition *orCond = new OrCondition (2 + bool(c) + bool(d) + bool(e));
-//        orCond->addCondition (0, a);
-//        orCond->addCondition (1, b);
+//OrCondition <EventT> *ored (Condition <EventT> *a, Condition <EventT> *b/*, Condition *c, Condition *d, Condition *e*/)
+//{
+////        OrCondition *orCond = new OrCondition (2 + bool(c) + bool(d) + bool(e));
+////        orCond->addCondition (0, a);
+////        orCond->addCondition (1, b);
 
-//        if (c) {
-//                orCond->addCondition (2, c);
-//        }
+////        if (c) {
+////                orCond->addCondition (2, c);
+////        }
 
-//        if (d) {
-//                orCond->addCondition (3, d);
-//        }
+////        if (d) {
+////                orCond->addCondition (3, d);
+////        }
 
-//        if (e) {
-//                orCond->addCondition (4, e);
-//        }
+////        if (e) {
+////                orCond->addCondition (4, e);
+////        }
 
-//        return orCond;
-    return new OrCondition (a, b);
-}
+////        return orCond;
+//    return new OrCondition <EventT> (a, b);
+//}

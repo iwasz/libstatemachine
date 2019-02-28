@@ -10,14 +10,20 @@
 #define DELAYACTION_H
 
 #include "Action.h"
+#include "Timer.h"
 #include <cstdint>
+#ifdef UNIT_TEST
+#include <cstdio>
+#endif
 
 /**
  * @brief Akcja, której jedynym zadaniem jest opóźnienie. Zatrzymuje całą maszynę i następna
  * akcja poniej, albo następne przejście wykona się dopiero po upłynięciu zadanego czasu.
  */
-class DelayAction : public Action {
+template <typename EventT = string> class DelayAction : public Action<EventT> {
 public:
+        using EventType = EventT;
+
         /**
          * @brief Akcja wysyłająca komendę do modemu GSM.
          * @param c Komenda.
@@ -32,9 +38,32 @@ private:
         uint16_t delayMs;
 };
 
+/*****************************************************************************/
+
+template <typename EventT> bool DelayAction<EventT>::run (const EventType &event)
+{
+        if (!lastMs) {
+                lastMs = Timer::getTick ();
+        }
+
+        uint32_t currentMs = Timer::getTick ();
+
+        if (currentMs - lastMs >= delayMs) {
+                lastMs = 0;
+
+#if 0 && !defined(UNIT_TEST)
+        printf ("delay %dms\n", delayMs);
+#endif
+
+                return true;
+        }
+
+        return false;
+}
+
 /**
  * @brief Helper do tworzenia opóźnień.
  */
-extern DelayAction *delayMs (uint16_t delay);
+template <typename EventT = string> DelayAction<EventT> *delayMs (uint16_t delay) { return new DelayAction<EventT> (delay); }
 
 #endif // DELAYACTION_H

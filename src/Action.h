@@ -1,15 +1,21 @@
 #ifndef ACTION_IACTION_H
 #define ACTION_IACTION_H
 
+#include "ErrorHandler.h"
 #include "StateMachineTypes.h"
 
 /**
  * @brief Baza dla wszystkich akcji.
  */
-class Action {
+template <typename EventT = string> class Action {
 public:
-        using EventType = string;
+        using EventType = EventT;
 
+        Action () = default;
+        Action (Action const &) = delete;
+        Action &operator= (Action const &) = delete;
+        Action (Action &&) = delete;
+        Action &operator= (Action &&) = delete;
         virtual ~Action () = default;
 
         /**
@@ -20,7 +26,7 @@ public:
 };
 
 #ifdef UNIT_TEST
-class TestAction : public Action {
+template <typename EventT = string> class TestAction : public Action<EventT> {
 public:
 };
 #endif
@@ -28,25 +34,65 @@ public:
 /**
  * @brief Wykonuje dwie akcje po kolei.
  */
-class AndAction : public Action {
+template <typename EventT = string> class AndAction : public Action<EventT> {
 public:
-        AndAction (Action *a, Action *b) : a (a), b (b), current (nullptr) {}
+        using EventType = EventT;
+
+        AndAction (Action<EventT> *a, Action<EventT> *b) : a (a), b (b), current (nullptr) {}
         virtual ~AndAction () {}
+
+        AndAction (AndAction const &) = delete;
+        AndAction &operator= (AndAction const &) = delete;
+        AndAction (AndAction const &&) noexcept = delete;
+        AndAction &operator= (AndAction &&) noexcept = delete;
+
         bool run (EventType const &event);
 
 private:
-        Action *a;
-        Action *b;
-        Action *current;
+        Action<EventT> *a;
+        Action<EventT> *b;
+        Action<EventT> *current;
 };
 
-extern AndAction *and_action (Action *a, Action *b);
+/*****************************************************************************/
+
+template <typename EventT> bool AndAction<EventT>::run (EventType const &event)
+{
+        if (!current) {
+                current = a;
+        }
+
+        if (current == a) {
+                if (!a->run (event)) {
+                        return false;
+                }
+                else {
+                        current = b;
+                }
+        }
+
+        if (current == b) {
+                if (!b->run (event)) {
+                        return false;
+                }
+                else {
+                        current = nullptr;
+                }
+        }
+
+        return true;
+}
+
+/*****************************************************************************/
+
+template <typename EventT = string> AndAction<EventT> *and_action (Action<EventT> *a, Action<EventT> *b) { return new AndAction<EventT> (a, b); }
 
 /**
  * Szablon do tworzenia akcji, które mają funktor (na przykład lambdę).
  */
-template <typename Func> class FuncAction : public Action {
+template <typename Func, typename EventT = string> class FuncAction : public Action<EventT> {
 public:
+        using EventType = EventT;
         FuncAction (Func func) : func (func) {}
         virtual ~FuncAction () {}
         virtual bool run (const char *input) { return func (input); }
@@ -55,6 +101,8 @@ private:
         Func func;
 };
 
-template <typename Func> FuncAction<Func> *func (Func func) { return new FuncAction<Func> (func); }
+/*****************************************************************************/
+
+template <typename Func, typename EventT = string> FuncAction<Func, EventT> *func (Func func) { return new FuncAction<Func, EventT> (func); }
 
 #endif // IACTION_H

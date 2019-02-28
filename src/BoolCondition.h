@@ -14,8 +14,9 @@
 /**
  * @brief Zwraca czy *B jest true.
  */
-class BoolCondition : public Condition {
+template <typename EventT = string> class BoolCondition : public Condition<EventT> {
 public:
+        using EventType = EventT;
         BoolCondition (bool *b) : b (b) {}
         virtual ~BoolCondition () override = default;
 
@@ -29,9 +30,10 @@ private:
 /**
  * Always true condition.
  */
-class TrueCondition : public Condition {
+template <typename EventT = string> class TrueCondition : public Condition<EventT> {
 public:
-        TrueCondition (InputRetention r = IGNORE_INPUT) : Condition (r) {}
+        using EventType = EventT;
+        TrueCondition (typename Condition<EventT>::InputRetention r = Condition<EventT>::IGNORE_INPUT) : Condition<EventType> (r) {}
         virtual ~TrueCondition () override = default;
         bool checkImpl (EventType const &) const override { return true; }
 };
@@ -41,8 +43,9 @@ static TrueCondition alwaysTrue;
 /**
  * Always false condition.
  */
-class FalseCondition : public Condition {
+template <typename EventT = string> class FalseCondition : public Condition<EventT> {
 public:
+        using EventType = EventT;
         // Cannot retain, so no constructor.
         virtual ~FalseCondition () override = default;
         bool checkImpl (EventType const &) const override { return false; }

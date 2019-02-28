@@ -26,7 +26,7 @@ TEST_CASE ("Pierwszy slick", "[Instantiation]")
         auto &inputQueue = machine.getEventQueue ();
 
         /* clang-format off */
-        machine.state (INITIAL, State::INITIAL)->entry (gsm ("AT"))
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("AT"))
                 ->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
 
         machine.state (ALIVE)->entry (gsm ("POWEROFF"))->exit (gsm ("BLAH"))
@@ -112,7 +112,7 @@ TEST_CASE ("Irrelevant input slick", "[Instantiation]")
         StateMachine machine;
         auto &inputQueue = machine.getEventQueue ();
 
-        machine.state (INITIAL, true)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (ALIVE)->entry (gsm ("POWEROFF"))->exit (gsm ("BLAH"))->transition (POWER_DOWN)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (POWER_DOWN);
 
@@ -209,7 +209,7 @@ TEST_CASE ("Multiple relevant input slick", "[Instantiation]")
         StateMachine machine;
         auto &inputQueue = machine.getEventQueue ();
 
-        machine.state (INITIAL, true)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (ALIVE)->entry (gsm ("POWEROFF"))->exit (gsm ("BLAH"))->transition (POWER_DOWN)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (POWER_DOWN);
 
@@ -288,7 +288,7 @@ TEST_CASE ("Delays slick", "[Instantiation]")
         auto &inputQueue = machine.getEventQueue ();
 
         /* clang-format off */
-        machine.state (INITIAL, true)->entry (and_action (delayMs (3), gsm ("AT")))
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (and_action (delayMs (3), gsm ("AT")))
                 ->transition (ALIVE)->when (eq ("OK"))->then (and_action (delayMs (3), gsm ("XYZ")));
 
         machine.state (ALIVE)->entry (gsm ("POWEROFF"))->exit (gsm ("BLAH"))
@@ -394,7 +394,7 @@ TEST_CASE ("Non input condition slick", "[Instantiation]")
         bool cond = false;
         BoolCondition fakeCond (&cond);
 
-        machine.state (INITIAL, true)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (&fakeCond);
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (&fakeCond);
         machine.state (ALIVE)->entry (gsm ("ALIVE ENTRY"))->transition (POWER_DOWN)->when (eq ("OK"));
         machine.state (POWER_DOWN);
 
@@ -480,7 +480,7 @@ TEST_CASE ("Transition to myself slick", "[Instantiation]")
         static bool bbb = true;
         BoolCondition fakeCond (&bbb);
 
-        machine.state (INITIAL, true)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (&fakeCond);
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (&fakeCond);
         machine.state (ALIVE)->entry (gsm ("ALIVE ENTRY"))->exit (gsm ("ALIVE EXIT"))->transition (ALIVE)->when (&fakeCond);
 
         /*---------------------------------------------------------------------------*/
@@ -542,7 +542,7 @@ TEST_CASE ("Negated", "[Instantiation]")
         StateMachine machine;
         auto &inputQueue = machine.getEventQueue ();
 
-        machine.state (INITIAL, true)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (ne ("OK"));
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (ne ("OK"));
         machine.state (ALIVE)
                 ->entry (gsm ("ALIVE ENTRY"))
                 ->exit (gsm ("ALIVE EXIT"))
@@ -606,10 +606,9 @@ TEST_CASE ("Time passes", "[Instantiation]")
 
         TimeCounter tc;
         StateMachine machine;
-        auto &inputQueue = machine.getEventQueue ();
         machine.setTimeCounter (&tc);
 
-        machine.state (INITIAL, true)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (msPassed (10, &tc));
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("INITIAL ENTRY"))->transition (ALIVE)->when (msPassed (10, &tc));
         machine.state (ALIVE)->entry (gsm ("ALIVE ENTRY"));
 
         /*---------------------------------------------------------------------------*/
@@ -638,10 +637,10 @@ TEST_CASE ("Time passes", "[Instantiation]")
         REQUIRE (machine.currentState->getLabel () == ALIVE);
 }
 
-struct FakeAction : public Action {
+struct FakeAction : public Action<string> {
         virtual ~FakeAction () override = default;
 
-        virtual bool run (EventType const &event) override
+        virtual bool run (string const &event) override
         {
                 if (!event.empty ()) {
                         lastInput = event.c_str ();
@@ -665,7 +664,10 @@ TEST_CASE ("Irrelevant and action", "[Instantiation]")
         StateMachine machine;
         auto &inputQueue = machine.getEventQueue ();
 
-        machine.state (INITIAL, true)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK", StringCondition::STRIP, Condition::RETAIN_INPUT));
+        machine.state (INITIAL, StateFlags::INITIAL)
+                ->entry (gsm ("AT"))
+                ->transition (ALIVE)
+                ->when (eq ("OK", StringCondition<string>::STRIP, Condition<string>::RETAIN_INPUT));
         machine.state (ALIVE)->entry (&fakeAction)->transition (POWER_DOWN)->when (eq ("OK"));
         machine.state (POWER_DOWN);
 
@@ -692,12 +694,12 @@ TEST_CASE ("Irrelevant and action", "[Instantiation]")
         REQUIRE (fakeAction.lastInput == "OK");
 }
 
-template <typename Q> struct FakeAction22 : public Action {
+template <typename Q> struct FakeAction22 : public Action<string> {
 
         FakeAction22 (Q &q) : inputQueue (q) {}
         virtual ~FakeAction22 () = default;
 
-        virtual bool run (EventType const &)
+        virtual bool run (string const &)
         {
                 inputQueue.push_back ();
                 inputQueue.back () = "string1";
@@ -720,7 +722,7 @@ TEST_CASE ("Action that causes an input", "[Instantiation]")
 
         FakeAction22 fakeAction (inputQueue);
 
-        machine.state (INITIAL, true)->transition (ALIVE)->when (eq ("OK"));
+        machine.state (INITIAL, StateFlags::INITIAL)->transition (ALIVE)->when (eq ("OK"));
         machine.state (ALIVE)->entry (and_action (&fakeAction, delayMs (1)))->transition (POWER_DOWN)->when (eq ("string1"));
         machine.state (POWER_DOWN);
 
@@ -760,7 +762,7 @@ TEST_CASE ("Global transition", "[Instantiation]")
         auto &inputQueue = machine.getEventQueue ();
 
         machine.transition (INITIAL)->when (eq ("RESET"))->then (gsm ("RRR"));
-        machine.state (INITIAL, true)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (ALIVE)->entry (gsm ("POWEROFF"))->exit (gsm ("BLAH"))->transition (POWER_DOWN)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (POWER_DOWN);
 
@@ -850,7 +852,7 @@ TEST_CASE ("Machine reset", "[Instantiation]")
         StateMachine machine;
         auto &inputQueue = machine.getEventQueue ();
 
-        machine.state (INITIAL, true)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (ALIVE)->entry (gsm ("POWEROFF"))->exit (gsm ("BLAH"))->transition (POWER_DOWN)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (POWER_DOWN);
         machine.state (X)->entry (gsm ("XXXX"))->transition (Y)->when (eq ("YYY"));
@@ -914,7 +916,7 @@ TEST_CASE ("Global transition only", "[Instantiation]")
         auto &inputQueue = machine.getEventQueue ();
 
         machine.transition (INITIAL)->when (eq ("RESET"))->then (gsm ("RRR"));
-        machine.state (INITIAL, true)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("AT"))->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
         machine.state (ALIVE)->entry (gsm ("POWEROFF"))->exit (gsm ("BLAH"));
         machine.state (POWER_DOWN);
 
@@ -966,9 +968,9 @@ TEST_CASE ("Global transition first", "[Instantiation]")
         auto &inputQueue = machine.getEventQueue ();
 
         /* clang-format off */
-        machine.transition (INITIAL, Transition::RUN_FIRST)->when (eq ("RESET"))->then (gsm ("RRR"));
+        machine.transition (INITIAL, Transition<string>::RUN_FIRST)->when (eq ("RESET"))->then (gsm ("RRR"));
 
-        machine.state (INITIAL, State::INITIAL)->entry (gsm ("AT"))
+        machine.state (INITIAL, StateFlags::INITIAL)->entry (gsm ("AT"))
                 ->transition (ALIVE)->when (eq ("OK"))->then (gsm ("XYZ"));
 
         machine.state (ALIVE)->entry (gsm ("POWEROFF"))->exit (gsm ("BLAH"))

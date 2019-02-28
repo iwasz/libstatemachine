@@ -14,9 +14,11 @@
 /**
  * @brief Jak nazwa wskazuje. Do 5 operandów.
  */
-class OrCondition : public Condition {
+template <typename EventT = string> class OrCondition : public Condition<EventT> {
 public:
-        OrCondition (Condition *a, Condition *b) : a (a) /*, conditionAMet (false)*/, b (b) /*, conditionBMet (false)*/ {}
+        using EventType = EventT;
+
+        OrCondition (Condition<EventT> *a, Condition<EventT> *b) : a (a) /*, conditionAMet (false)*/, b (b) /*, conditionBMet (false)*/ {}
 
         bool getResult () const override { return a->getResult () || b->getResult (); }
         void reset () override
@@ -39,10 +41,15 @@ public:
         }
 
 private:
-        Condition *a;
-        Condition *b;
+        Condition<EventT> *a;
+        Condition<EventT> *b;
 };
 
-extern OrCondition *ored (Condition *a, Condition *b /*, Condition *c = nullptr, Condition *d = nullptr, Condition *e = nullptr*/);
+/*****************************************************************************/
+
+template <typename EventT = string> OrCondition<EventT> *ored (Condition<EventT> *a, Condition<EventT> *b)
+{
+        return new OrCondition<EventT> (a, b);
+}
 
 #endif // ORCONDITION_H

@@ -2,38 +2,35 @@
 #define STATE_MACHINE_TRANSITION_H
 
 #include "Action.h"
-#include "State.h"
 #include "Condition.h"
+#include "State.h"
 
-class Transition {
+template <typename EventT = string> class Transition {
 public:
+        using EventType = EventT;
         enum Type { RUN_FIRST, RUN_LAST };
 
-        Transition (Condition *c = nullptr, /*uint8_t from = 0,*/ uint8_t to = 0, Action *action = nullptr)
-            : condition (c), /*from (from),*/ to (to), action (action), next (nullptr)
+        Transition (Condition<EventType> *c = nullptr, uint8_t to = 0, Action<EventType> *action = nullptr)
+            : condition (c), to (to), action (action), next (nullptr)
         {
         }
 
-        void setCondition (Condition *value) { condition = value; }
-        Condition *getCondition () { return condition; }
-
-//        uint8_t getFrom () { return from; }
-//        void setFrom (uint8_t value) { from = value; }
+        void setCondition (Condition<EventType> *value) { condition = value; }
+        Condition<EventType> *getCondition () { return condition; }
 
         uint8_t getTo () { return to; }
         void setTo (uint8_t value) { to = value; }
 
-        Action *getAction () { return action; }
-        void setAction (Action *value) { action = value; }
+        Action<EventType> *getAction () { return action; }
+        void setAction (Action<EventType> *value) { action = value; }
 
 private:
-        Condition *condition;
-//        uint8_t from;
-        uint8_t to;
-        Action *action;
+        template <typename T> friend class StateMachine;
+        template <typename T> friend class State;
 
-        friend class StateMachine;
-        friend class State;
+        Condition<EventType> *condition;
+        uint8_t to;
+        Action<EventType> *action;
         Transition *next;
 };
 

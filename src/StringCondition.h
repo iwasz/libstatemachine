@@ -2,16 +2,19 @@
 #define STRINGCONDITION_H
 
 #include "Condition.h"
+#include <cctype>
 
 /**
  * @brief Warunek porównujący wejście z napisem który podajemy jako arg. konstruktora.
  */
-class StringCondition : public Condition {
+template <typename EventT = string> class StringCondition : public Condition<EventT> {
 public:
+        using EventType = EventT;
         enum StripInput { DONT_STRIP, STRIP };
 
-        StringCondition (const char *condition, StripInput stripInput = STRIP, bool ne = false, InputRetention retainInput = IGNORE_INPUT)
-            : Condition (retainInput), condition (condition), stripInput (stripInput), negated (ne)
+        StringCondition (const char *condition, StripInput stripInput = STRIP, bool ne = false,
+                         typename Condition<EventT>::InputRetention retainInput = Condition<EventT>::IGNORE_INPUT)
+            : Condition<EventType> (retainInput), condition (condition), stripInput (stripInput), negated (ne)
         {
         }
 
@@ -25,16 +28,57 @@ protected:
         bool negated;
 };
 
-/**
- * @brief eq
- * @param condition
- * @param stripInput
- * @return
- */
-extern StringCondition *eq (const char *condition, StringCondition::StripInput stripInput = StringCondition::STRIP,
-                            Condition::InputRetention retainInput = Condition::IGNORE_INPUT);
+/*****************************************************************************/
 
-extern StringCondition *ne (const char *condition, StringCondition::StripInput stripInput = StringCondition::STRIP,
-                            Condition::InputRetention retainInput = Condition::IGNORE_INPUT);
+template <typename EventT> bool StringCondition<EventT>::checkImpl (EventType const &event) const
+{
+        if (event.empty ()) {
+                return !condition;
+        }
+
+        const char *c = condition;
+        int ei = 0;
+        int ci = 0;
+
+        // Stripuj początek.
+        if (stripInput) {
+                while (ei < event.size () && std::isspace (event[ei])) {
+                        ++ei;
+                }
+        }
+
+        while (ei < event.size () /*&& ci < c.size () */ && (event[ei] == *c)) {
+                ++c;
+                ++ei;
+        }
+
+        // Stripuj koniec.
+        if (stripInput) {
+                while (ei < event.size () && std::isspace (event[ei])) {
+                        ++ei;
+                }
+        }
+
+        bool result = (event[ei] == *c);
+        return (negated) ? (!result) : (result);
+}
+
+/*****************************************************************************/
+
+template <typename EventT = string>
+StringCondition<EventT> *eq (const char *condition, typename StringCondition<EventT>::StripInput stripInput = StringCondition<EventT>::STRIP,
+                             typename Condition<EventT>::InputRetention retainInput = Condition<EventT>::IGNORE_INPUT)
+{
+        return new StringCondition<EventT> (condition, stripInput, false, retainInput);
+}
+
+/*****************************************************************************/
+
+template <typename EventT = string>
+StringCondition<EventT> *ne (const char *condition, typename StringCondition<EventT>::StripInput stripInput = StringCondition<EventT>::STRIP,
+                             typename Condition<EventT>::InputRetention retainInput = Condition<EventT>::IGNORE_INPUT)
+{
+        return new StringCondition<EventT> (condition, stripInput, true);
+}
 
 #endif // STRINGCONDITION_H
