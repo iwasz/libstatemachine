@@ -3,6 +3,8 @@
 
 #include "Condition.h"
 #include <cctype>
+#include <cstring>
+#include <etl/string_view.h>
 
 enum class StripInput { DONT_STRIP, STRIP };
 
@@ -15,7 +17,7 @@ public:
 
         StringCondition (const char *condition, StripInput stripInput = StripInput::STRIP, bool ne = false,
                          InputRetention retainInput = InputRetention::IGNORE_INPUT)
-            : Condition<EventType> (retainInput), condition (condition), stripInput (stripInput), negated (ne)
+            : Condition<EventType> (retainInput), condition (condition, strlen (condition)), stripInput (stripInput), negated (ne)
         {
         }
 
@@ -24,7 +26,7 @@ protected:
 #endif
         virtual bool checkImpl (EventType const &event) const;
 
-        const char *condition;
+        etl::string_view condition;
         StripInput stripInput;
         bool negated;
 };
@@ -34,33 +36,32 @@ protected:
 template <typename EventT> bool StringCondition<EventT>::checkImpl (EventType const &event) const
 {
         if (event.empty ()) {
-                return !condition;
+                return condition.empty ();
         }
 
-        const char *c = condition;
-        int ei = 0;
-        int ci = 0;
+        size_t ei = 0;
+        size_t ci = 0;
 
         // Stripuj początek.
         if (stripInput == StripInput::STRIP) {
-                while (ei < event.size () && std::isspace (event[ei])) {
+                while (ei < event.size () && std::isspace (event.at (ei))) {
                         ++ei;
                 }
         }
 
-        while (ei < event.size () /*&& ci < c.size () */ && (event[ei] == *c)) {
-                ++c;
+        while (ei < event.size () && ci < condition.size () && (event.at (ei) == condition.at (ci))) {
                 ++ei;
+                ++ci;
         }
 
         // Stripuj koniec.
         if (stripInput == StripInput::STRIP) {
-                while (ei < event.size () && std::isspace (event[ei])) {
+                while (ei < event.size () && std::isspace (event.at (ei))) {
                         ++ei;
                 }
         }
 
-        bool result = (event[ei] == *c);
+        bool result = (ci == condition.size ()) && (ei == event.size ());
         return (negated) ? (!result) : (result);
 }
 

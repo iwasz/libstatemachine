@@ -6,23 +6,20 @@
  *  ~~~~~~~~~                                                               *
  ****************************************************************************/
 
+#include "BeginsWithCondition.h"
+#include "LikeCondition.h"
+#include "catch.hpp"
 #include <cstdint>
 #include <cstring>
-#include <vector>
 #include <string>
-#include "catch.hpp"
-//#include "../src/stateMachine/StateMachine.h"
-//#include "../src/stateMachine/DelayAction.h"
-#include "../src/stateMachine/LikeCondition.h"
-#include "../src/stateMachine/BeginsWithCondition.h"
-
+#include <vector>
 
 /**
  * @brief TEST_CASE
  */
 TEST_CASE ("StringCondition test", "[StateMachine Conditions]")
 {
-        StringCondition ok ("ala ma kota", StringCondition::DONT_STRIP);
+        StringCondition ok ("ala ma kota", StripInput::DONT_STRIP);
         REQUIRE (!ok.checkImpl ("janek ma psa"));
         REQUIRE (ok.checkImpl ("ala ma kota"));
         REQUIRE (!ok.checkImpl (" ala ma kota"));
@@ -30,7 +27,7 @@ TEST_CASE ("StringCondition test", "[StateMachine Conditions]")
         REQUIRE (!ok.checkImpl (" ala ma kota "));
         REQUIRE (!ok.checkImpl ("ala ma kota\r\n"));
 
-        StringCondition con ("ala ma kota", StringCondition::STRIP);
+        StringCondition con ("ala ma kota", StripInput::STRIP);
 
         REQUIRE (!con.checkImpl ("janek ma psa"));
         REQUIRE (con.checkImpl ("ala ma kota"));
@@ -45,8 +42,7 @@ TEST_CASE ("StringCondition test", "[StateMachine Conditions]")
  */
 TEST_CASE ("StringCondition starts", "[StateMachine Conditions]")
 {
-        BeginsWithCondition ok ("test", StringCondition::DONT_STRIP);
-        bool b;
+        BeginsWithCondition ok ("test", StripInput::DONT_STRIP);
 
         REQUIRE (!ok.checkImpl ("janek ma psa"));
         REQUIRE (ok.checkImpl ("test ma kota"));
@@ -55,7 +51,7 @@ TEST_CASE ("StringCondition starts", "[StateMachine Conditions]")
         REQUIRE (!ok.checkImpl (" test ma kota "));
         REQUIRE (ok.checkImpl ("test ma kota\r\n"));
 
-        BeginsWithCondition con ("franio", StringCondition::STRIP);
+        BeginsWithCondition con ("franio", StripInput::STRIP);
 
         REQUIRE (!con.checkImpl ("janek ma psa"));
         REQUIRE (con.checkImpl ("franio ma kota"));
@@ -68,7 +64,6 @@ TEST_CASE ("StringCondition starts", "[StateMachine Conditions]")
 TEST_CASE ("Like condition wo stripping test", "[StateMachine Conditions]")
 {
         LikeCondition like1 ("+CSQ: 99:%:66");
-        bool b;
 
         REQUIRE (like1.checkImpl ("+CSQ: 99:0:66")); // select '+CSQ: 99:0:66' like '+CSQ: 99:%:66'; => t
         REQUIRE (!like1.checkImpl ("+CSQ: 99:0:666"));
@@ -116,7 +111,7 @@ TEST_CASE ("Like condition wo stripping test", "[StateMachine Conditions]")
         // TODO zaimplementować _
         //        LikeCondition like3 ("+CSQ:_99");
 
-        LikeCondition like5 ("%41 0C%", StringCondition::STRIP, Condition::RETAIN_INPUT);
+        LikeCondition like5 ("%41 0C%", StripInput::STRIP, InputRetention::RETAIN_INPUT);
 
         REQUIRE (like5.checkImpl (">41 0C 00 40 "));
         REQUIRE (like5.checkImpl ("\r>41 0C 00 40 "));

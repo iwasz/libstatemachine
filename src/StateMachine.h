@@ -111,6 +111,8 @@
  * TODO Zależność od libmicro dać jako opcję (ifdef)
  *
  * TODO W walgrindzie jak się uruchomi unitytest to jeden nie przechodzi.
+ *
+ * TODO Trzeba opisac jak działa NotCondition, bo to nieintuicyjnie działa gdy jest więcej niż 1 odpowiedź (? przykład ?).
  */
 template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class StateMachine {
 public:

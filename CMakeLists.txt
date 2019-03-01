@@ -47,6 +47,13 @@ ADD_EXECUTABLE (unittest
     "src/TimeCounter.h"
     "src/TimePassedCondition.h"
     "src/DelayAction.h"
+    "src/BeginsWithCondition.h"
+    "src/IntegerAction.h"
+    "src/IntegerCondition.h"
+    "src/LikeCondition.h"
+    "src/NotCondition.h"
+    "src/StateChangeAction.h"
+    "src/StateCondition.h"
 
     "test/etl_profile.h"
     "test/GsmCommandAction.h"
@@ -54,5 +61,7 @@ ADD_EXECUTABLE (unittest
     "test/00CatchInit.cc"
     "test/01InstantiationInitialTest.cc"
     "test/02AndConditionTest.cc"
+    "test/03InstantiationBinaryEventTest.cc"
+    "test/04LikeConditionTest.cc"
 )
 

@@ -33,7 +33,7 @@ protected:
          * @param data Dane wejściowe z kolejki.
          * @return Czy warunek jest spełniony
          */
-        virtual bool checkImpl (EventType const &event) const { return false; }
+        virtual bool checkImpl (EventType const &) const { return false; }
 
 private:
         InputRetention retainInput;
