@@ -37,6 +37,7 @@ ADD_EXECUTABLE (unittest
     "src/Action.h"
     "src/Condition.h"
     "src/AndCondition.h"
+    "src/SequenceCondition.h"
     "src/OrCondition.h"
     "src/BoolCondition.h"
     "src/StringCondition.h"
@@ -63,5 +64,6 @@ ADD_EXECUTABLE (unittest
     "test/02AndConditionTest.cc"
     "test/03InstantiationBinaryEventTest.cc"
     "test/04LikeConditionTest.cc"
+    "test/05SequenceConditionTest.cc"
 )
 
