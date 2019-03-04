@@ -1,3 +1,11 @@
+/****************************************************************************
+ *                                                                          *
+ *  Author : lukasz.iwaszkiewicz@gmail.com                                  *
+ *  ~~~~~~~~                                                                *
+ *  License : see COPYING file for details.                                 *
+ *  ~~~~~~~~~                                                               *
+ ****************************************************************************/
+
 #ifndef STATE_MACHINE_TRANSITION_H
 #define STATE_MACHINE_TRANSITION_H
 

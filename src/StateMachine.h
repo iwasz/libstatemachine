@@ -1,10 +1,38 @@
+/****************************************************************************
+ *                                                                          *
+ *  Author : lukasz.iwaszkiewicz@gmail.com                                  *
+ *  ~~~~~~~~                                                                *
+ *  License : see COPYING file for details.                                 *
+ *  ~~~~~~~~~                                                               *
+ ****************************************************************************/
+
 #ifndef STATEMACHINE_H
 #define STATEMACHINE_H
 
+// Remember to add *all* new headers here. This header is a common one.
+#include "Action.h"
+#include "AndCondition.h"
+#include "BeginsWithCondition.h"
+#include "BoolAction.h"
+#include "BoolCondition.h"
+#include "Condition.h"
+#include "Debug.h"
+#include "DelayAction.h"
+#include "IntegerAction.h"
+#include "IntegerCondition.h"
+#include "LikeCondition.h"
+#include "NotCondition.h"
+#include "OrCondition.h"
+#include "SequenceCondition.h"
 #include "State.h"
+#include "StateChangeAction.h"
+#include "StateCondition.h"
+#include "StateMachine.h"
 #include "StateMachineTypes.h"
+#include "StringCondition.h"
 #include "StringQueue.h"
 #include "TimeCounter.h"
+#include "TimePassedCondition.h"
 #include "Transition.h"
 #include <cstring>
 

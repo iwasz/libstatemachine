@@ -1,5 +1,13 @@
-#ifndef ACTION_IACTION_H
-#define ACTION_IACTION_H
+/****************************************************************************
+ *                                                                          *
+ *  Author : lukasz.iwaszkiewicz@gmail.com                                  *
+ *  ~~~~~~~~                                                                *
+ *  License : see COPYING file for details.                                 *
+ *  ~~~~~~~~~                                                               *
+ ****************************************************************************/
+
+#ifndef ACTION_I_ACTION_H
+#define ACTION_I_ACTION_H
 
 #include "ErrorHandler.h"
 #include "StateMachineTypes.h"

@@ -26,6 +26,7 @@ TEST_CASE ("StringCondition test", "[StateMachine Conditions]")
         REQUIRE (!ok.checkImpl ("ala ma kota "));
         REQUIRE (!ok.checkImpl (" ala ma kota "));
         REQUIRE (!ok.checkImpl ("ala ma kota\r\n"));
+        REQUIRE (!ok.checkImpl ("        "));
 
         StringCondition con ("ala ma kota", StripInput::STRIP);
 
@@ -35,6 +36,7 @@ TEST_CASE ("StringCondition test", "[StateMachine Conditions]")
         REQUIRE (con.checkImpl ("ala ma kota "));
         REQUIRE (con.checkImpl (" ala ma kota "));
         REQUIRE (con.checkImpl ("ala ma kota\r\n"));
+        REQUIRE (!con.checkImpl ("        "));
 }
 
 /**

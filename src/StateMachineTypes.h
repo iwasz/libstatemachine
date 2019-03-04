@@ -9,11 +9,10 @@
 #ifndef STATEMACHINETYPES_H
 #define STATEMACHINETYPES_H
 
+#include "Hal.h"
+#include "collection/Queue.h"
 #include <etl/cstring.h>
 #include <etl/queue_spsc_isr.h>
-#include "collection/Queue.h"
-
-
 
 static constexpr size_t MAX_STATES_NUM = 64;
 static constexpr size_t ACTION_QUEUE_SIZE = 8;
