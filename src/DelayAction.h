@@ -48,7 +48,7 @@ template <typename EventT> bool DelayAction<EventT>::run (const EventType &event
 
         uint32_t currentMs = Timer::getTick ();
 
-        if (currentMs - lastMs >= delayMs) {
+            if (currentMs - lastMs >= delayMs) {
                 lastMs = 0;
 
 #if 0 && !defined(UNIT_TEST)

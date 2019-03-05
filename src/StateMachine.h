@@ -6,8 +6,8 @@
  *  ~~~~~~~~~                                                               *
  ****************************************************************************/
 
-#ifndef STATEMACHINE_H
-#define STATEMACHINE_H
+#ifndef LIB_STATEMACHINE_H
+#define LIB_STATEMACHINE_H
 
 // Remember to add *all* new headers here. This header is a common one.
 #include "Action.h"
@@ -27,7 +27,6 @@
 #include "State.h"
 #include "StateChangeAction.h"
 #include "StateCondition.h"
-#include "StateMachine.h"
 #include "StateMachineTypes.h"
 #include "StringCondition.h"
 #include "StringQueue.h"
@@ -206,10 +205,10 @@ public:
                                   = TransitionPriority::RUN_LAST); /// Przejście z ostatnio dodanego stanu do stanu o nazwie "to".
 
         StateMachine *when (ConditionType *cond); /// Warunek do ostatnio dodanego przejścia (transition).
-        //        template <typename Func> StateMachine *whenf (Func func) { return when (new FuncCondition<Func> (func)); }
+        template <typename Func> StateMachine *whenf (Func func) { return when (new FuncCondition<Func> (func)); }
 
         StateMachine *then (ActionType *action); /// Akcja do ostatnio dodanego przejścia (transition).
-        //        template <typename Func> StateMachine *thenf (Func func) { return then (new FuncAction<Func> (func)); }
+        template <typename Func> StateMachine *thenf (Func func) { return then (new FuncAction<Func> (func)); }
 
         EventQueue &getEventQueue () { return eventQueue; }
         EventQueue const &getEventQueue () const { return eventQueue; }
@@ -329,12 +328,6 @@ template <typename EventT> bool StateMachine<EventT>::fixCurrentState ()
 
 template <typename EventT> bool StateMachine<EventT>::check (ConditionType &condition, uint8_t inputNum, EventType &retainedInput)
 {
-        /*
-         * Conditions are stateful i.e. they remember the result of last check,
-         * so here we reset their state.
-         */
-        condition.reset ();
-
         if (eventQueue.size ()) {
 
                 /*
@@ -427,6 +420,14 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
 #ifndef UNIT_TEST
         __enable_irq ();
 #endif
+
+        /*
+         * Conditions are stateful i.e. they remember the result of last check,
+         * so here we reset their state.
+         */
+        if (ret && ret->getCondition ()) {
+                ret->getCondition ()->reset ();
+        }
 
         return ret;
 }

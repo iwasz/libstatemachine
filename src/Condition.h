@@ -61,17 +61,18 @@ template <typename EventT> bool Condition<EventT>::check (EventType const &event
         return result;
 }
 
-///**
-// * Można podać np. lambdę.
-// */
-// template <typename Func> class FuncCondition : public Condition {
-// public:
-//        FuncCondition (Func func) : func (func) {}
-//        virtual ~FuncCondition () {}
-//        virtual bool checkImpl (const char *data) const { return func (data); }
+/**
+ * Można podać np. lambdę.
+ */
+template <typename Func, typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class FuncCondition : public Condition<EventT> {
+public:
+        using EventType = EventT;
+        FuncCondition (Func func) : func (func) {}
+        virtual ~FuncCondition () = default;
+        virtual bool checkImpl (EventType const &event) const { return func (event); }
 
-// private:
-//        Func func;
-//};
+private:
+        Func func;
+};
 
 #endif // ICONDITION_H

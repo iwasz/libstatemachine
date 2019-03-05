@@ -65,5 +65,6 @@ ADD_EXECUTABLE (unittest
     "test/03InstantiationBinaryEventTest.cc"
     "test/04LikeConditionTest.cc"
     "test/05SequenceConditionTest.cc"
+    "test/06EventSequencesTest.cc"
 )
 

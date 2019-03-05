@@ -93,17 +93,20 @@ template <typename EventT> bool AndAction<EventT>::run (EventType const &event)
 
 /*****************************************************************************/
 
-template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> AndAction<EventT> *and_action (Action<EventT> *a, Action<EventT> *b) { return new AndAction<EventT> (a, b); }
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> AndAction<EventT> *and_action (Action<EventT> *a, Action<EventT> *b)
+{
+        return new AndAction<EventT> (a, b);
+}
 
 /**
  * Szablon do tworzenia akcji, które mają funktor (na przykład lambdę).
  */
-template <typename Func, typename EventT = string> class FuncAction : public Action<EventT> {
+template <typename Func, typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class FuncAction : public Action<EventT> {
 public:
         using EventType = EventT;
         FuncAction (Func func) : func (func) {}
         virtual ~FuncAction () {}
-        virtual bool run (const char *input) { return func (input); }
+        virtual bool run (EventType const &input) { return func (input); }
 
 private:
         Func func;
@@ -111,6 +114,9 @@ private:
 
 /*****************************************************************************/
 
-template <typename Func, typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> FuncAction<Func, EventT> *func (Func func) { return new FuncAction<Func, EventT> (func); }
+template <typename Func, typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> FuncAction<Func, EventT> *func (Func func)
+{
+        return new FuncAction<Func, EventT> (func);
+}
 
 #endif // IACTION_H
