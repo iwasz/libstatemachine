@@ -135,11 +135,20 @@
  *
  * TODO Pousuwać konstruktyory i metody, których nie używam w ogóle.
  *
- * TODO Zależność od libmicro dać jako opcję (ifdef)
+ * TODO Zależność od libmicro dać jako opcję (ifdef) EDIT : sporo rzeczy nie będzie działać, ale trudno.
  *
  * TODO W walgrindzie jak się uruchomi unitytest to jeden nie przechodzi.
  *
  * TODO Trzeba opisac jak działa NotCondition, bo to nieintuicyjnie działa gdy jest więcej niż 1 odpowiedź (? przykład ?).
+ *
+ * TODO Easier interface for constructing the machine and for lambdas
+ *
+ * TODO Event arguments would resolve the problem of passing data between actions in elegant way and
+ * would allow more flexible condition checks.
+ *
+ * TODO It would be fantastic if transitions, entry and exit actions were fired in
+ * natural order that is entry , transition, transition action, exit. Now all actions
+ * are run all at once.
  */
 template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class StateMachine {
 public:
@@ -205,10 +214,10 @@ public:
                                   = TransitionPriority::RUN_LAST); /// Przejście z ostatnio dodanego stanu do stanu o nazwie "to".
 
         StateMachine *when (ConditionType *cond); /// Warunek do ostatnio dodanego przejścia (transition).
-        template <typename Func> StateMachine *whenf (Func func) { return when (new FuncCondition<Func> (func)); }
+        template <typename Func> StateMachine *whenf (Func func) { return when (new FuncCondition<EventType, Func> (func)); }
 
         StateMachine *then (ActionType *action); /// Akcja do ostatnio dodanego przejścia (transition).
-        template <typename Func> StateMachine *thenf (Func func) { return then (new FuncAction<Func> (func)); }
+        template <typename Func> StateMachine *thenf (Func func) { return then (new FuncAction<EventType, Func> (func)); }
 
         EventQueue &getEventQueue () { return eventQueue; }
         EventQueue const &getEventQueue () const { return eventQueue; }
@@ -340,6 +349,13 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
                 }
         }
         else {
+                /*
+                 * This was added for enabling checks on external variables, that is
+                 * checks independent of the event queue. But I have doubts now. This
+                 * implementation makes conditions like : like ("%") pointless, because
+                 * it will catch this dummy event even though there was no "real" event
+                 * i.e. there was no response from the modem.
+                 */
                 condition.check (EventType (), retainedInput);
         }
 
@@ -366,15 +382,11 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                 t = firstTransitionRF;
         }
 
-#ifndef UNIT_TEST
-        __disable_irq ();
-#endif
-
-        uint8_t noOfInputs = (useOnlyOneInputAtATime) ? (1) : (eventQueue.size ());
-
-#ifndef UNIT_TEST
-        __enable_irq ();
-#endif
+        uint8_t noOfInputs = 0;
+        {
+                InterruptLock<CortexMInterruptControl> lock;
+                noOfInputs = (useOnlyOneInputAtATime) ? (1) : (eventQueue.size ());
+        }
 
         while (1) {
 
@@ -407,19 +419,19 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
         }
 
 #ifndef UNIT_TEST
-        __disable_irq ();
+        for (int i = 0; i < noOfInputs; ++i) {
+                // I call "from_isr" version because I lock by myself.
+                // eventQueue.pop_from_isr ();
+                debug->print ("IN : ");
+                debug->print ((uint8_t *)eventQueue.front (i).data (), eventQueue.front (i).size ());
+                debug->println ("");
+        }
 #endif
 
-        //        for (int i = 0; i < noOfInputs; ++i) {
-        //                // I call "from_isr" version because I lock by myself.
-        //                eventQueue.pop_from_isr ();
-        //        }
-
-        eventQueue.pop_front (noOfInputs);
-
-#ifndef UNIT_TEST
-        __enable_irq ();
-#endif
+        {
+                InterruptLock<CortexMInterruptControl> lock;
+                eventQueue.pop_front (noOfInputs);
+        }
 
         /*
          * Conditions are stateful i.e. they remember the result of last check,
@@ -448,7 +460,7 @@ template <typename EventT> void StateMachine<EventT>::performTransition (Transit
                 errorCondition (NO_SUCH_STATE);
         }
 
-#ifndef UNIT_TEST
+#if 1 && !defined(UNIT_TEST)
         uint8_t currentLabel = currentState->getLabel ();
         debug->print ("transition : ");
         debug->println (currentLabel);
@@ -459,9 +471,6 @@ template <typename EventT> void StateMachine<EventT>::performTransition (Transit
         }
 
         pushBackAction (currentState->getEntryAction ());
-#if 1
-//        debugLedToggle ();
-#endif
 }
 
 /*****************************************************************************/
@@ -675,15 +684,10 @@ template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::then (Act
 
 template <typename EventT> void StateMachine<EventT>::reset (/*uint8_t state*/)
 {
-#ifndef UNIT_TEST
-        __disable_irq ();
-#endif
-
-        eventQueue.clear ();
-
-#ifndef UNIT_TEST
-        __enable_irq ();
-#endif
+        {
+                InterruptLock<CortexMInterruptControl> lock;
+                eventQueue.clear ();
+        }
 
         currentState = nullptr;
 

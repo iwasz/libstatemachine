@@ -18,7 +18,7 @@ TEST_CASE ("Seq multi", "[SeqCondition]")
 {
         gsmModemCommandsIssued.clear ();
 
-        StateMachine machine;
+        StateMachine<> machine;
         auto &inputQueue = machine.getEventQueue ();
 
         bool cond = false;
@@ -239,4 +239,3 @@ TEST_CASE ("Seq order is significant", "[SeqCondition]")
         machine.run ();
         REQUIRE (machine.currentState->getLabel () != ALIVE);
 }
-

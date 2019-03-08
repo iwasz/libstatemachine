@@ -22,7 +22,7 @@ TEST_CASE ("Pierwszy slick", "[Instantiation]")
 {
         gsmModemCommandsIssued.clear ();
 
-        StateMachine machine;
+        StateMachine<> machine;
         auto &inputQueue = machine.getEventQueue ();
 
         /* clang-format off */

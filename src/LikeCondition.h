@@ -26,10 +26,10 @@ public:
         virtual ~LikeCondition () {}
 
 #ifndef UNIT_TEST
-private:
+protected:
 #endif
 
-        bool checkImpl (EventType const &event) const;
+        virtual bool checkImpl (EventType const &event) const;
 };
 
 /*

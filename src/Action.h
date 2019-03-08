@@ -101,7 +101,7 @@ template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> AndAction<Even
 /**
  * Szablon do tworzenia akcji, które mają funktor (na przykład lambdę).
  */
-template <typename Func, typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class FuncAction : public Action<EventT> {
+template <typename EventT, typename Func> class FuncAction : public Action<EventT> {
 public:
         using EventType = EventT;
         FuncAction (Func func) : func (func) {}
@@ -114,9 +114,9 @@ private:
 
 /*****************************************************************************/
 
-template <typename Func, typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> FuncAction<Func, EventT> *func (Func func)
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE, typename Func> FuncAction<EventT, Func> *func (Func func)
 {
-        return new FuncAction<Func, EventT> (func);
+        return new FuncAction<EventT, Func> (func);
 }
 
 #endif // IACTION_H

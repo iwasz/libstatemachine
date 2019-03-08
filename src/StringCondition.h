@@ -32,7 +32,7 @@ public:
 #ifndef UNIT_TEST
 protected:
 #endif
-        virtual bool checkImpl (EventType const &event) const;
+        virtual bool checkImpl (EventType const &event) const override;
 
         etl::string_view condition;
         StripInput stripInput;
@@ -89,6 +89,29 @@ StringCondition<EventT> *ne (const char *condition, StripInput stripInput = Stri
                              InputRetention retainInput = InputRetention::IGNORE_INPUT)
 {
         return new StringCondition<EventT> (condition, stripInput, true);
+}
+
+/**
+ * Checks if event has non zero size.
+ */
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class NotEmptyCondition : public Condition<EventT> {
+public:
+        using EventType = EventT;
+
+        NotEmptyCondition (InputRetention retainInput = InputRetention::IGNORE_INPUT) : Condition<EventType> (retainInput) {}
+
+#ifndef UNIT_TEST
+protected:
+#endif
+        virtual bool checkImpl (EventType const &event) const override { return !event.empty (); }
+};
+
+/*****************************************************************************/
+
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE>
+NotEmptyCondition<EventT> *notEmpty (InputRetention retainInput = InputRetention::IGNORE_INPUT)
+{
+        return new NotEmptyCondition<EventT> (retainInput);
 }
 
 #endif // STRINGCONDITION_H

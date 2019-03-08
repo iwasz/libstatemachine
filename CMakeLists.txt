@@ -11,7 +11,7 @@ endif(COMMAND cmake_policy)
 SET(CMAKE_C_FLAGS "-std=gnu99 -Wall" CACHE INTERNAL "c compiler flags")
 SET(CMAKE_CXX_FLAGS "-std=c++17 -Wall" CACHE INTERNAL "cxx compiler flags")
 
-ADD_DEFINITIONS ("-DUNIT_TEST")
+ADD_DEFINITIONS ("-DUNIT_TEST -DLIB_STATE_MACHINE_DEFAULT_EVENT_TYPE=string")
 
 SET (CATCH2_INCLUDE "../Catch2/single_include/catch2")
 INCLUDE_DIRECTORIES("${CATCH2_INCLUDE}")
@@ -66,5 +66,6 @@ ADD_EXECUTABLE (unittest
     "test/04LikeConditionTest.cc"
     "test/05SequenceConditionTest.cc"
     "test/06EventSequencesTest.cc"
+    "test/07FunctionParameters.cc"
 )
 

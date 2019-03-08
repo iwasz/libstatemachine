@@ -24,26 +24,6 @@ using string = etl::string<64>;
 #define LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE string
 #endif
 
-/**
- * etl::queue_spsc_isr
- */
-struct InterruptControl {
-
-        static void lock ()
-        {
-#ifndef UNIT_TEST
-                __disable_irq ();
-#endif
-        }
-
-        static void unlock ()
-        {
-#ifndef UNIT_TEST
-                __enable_irq ();
-#endif
-        }
-};
-
 template <typename EventT> struct StateMachineTypes {
 
         using EventType = EventT;

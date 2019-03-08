@@ -64,7 +64,7 @@ template <typename EventT> bool Condition<EventT>::check (EventType const &event
 /**
  * Można podać np. lambdę.
  */
-template <typename Func, typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class FuncCondition : public Condition<EventT> {
+template <typename EventT, typename Func> class FuncCondition : public Condition<EventT> {
 public:
         using EventType = EventT;
         FuncCondition (Func func) : func (func) {}
