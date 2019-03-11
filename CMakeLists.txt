@@ -67,5 +67,6 @@ ADD_EXECUTABLE (unittest
     "test/05SequenceConditionTest.cc"
     "test/06EventSequencesTest.cc"
     "test/07FunctionParameters.cc"
+    "test/08InstantiationEventArgumentsTest.cc"
 )
 

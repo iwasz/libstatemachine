@@ -177,7 +177,6 @@ public:
               synchroCounter (nullptr),
               useOnlyOneInputAtATime (useOnlyOneInputAtATime)
         {
-                inputCopy[0] = '\0';
                 memset (states, 0, sizeof (states));
         }
 

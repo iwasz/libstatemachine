@@ -43,7 +43,7 @@ protected:
 
 template <typename EventT> bool StringCondition<EventT>::checkImpl (EventType const &event) const
 {
-        if (event.empty ()) {
+        if (event.size () == 0) {
                 return condition.empty ();
         }
 
