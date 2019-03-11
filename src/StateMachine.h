@@ -34,6 +34,7 @@
 #include "TimePassedCondition.h"
 #include "Transition.h"
 #include <cstring>
+#include <etl/list.h>
 
 // TODO
 // namespace sm {
@@ -149,12 +150,15 @@
  * TODO It would be fantastic if transitions, entry and exit actions were fired in
  * natural order that is entry , transition, transition action, exit. Now all actions
  * are run all at once.
+ *
+ * TODO Deferred event implenentation is shitty.
  */
 template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class StateMachine {
 public:
         using EventType = EventT;
         using Types = StateMachineTypes<EventType>;
         using EventQueue = typename Types::EventQueue;
+        using DeferredEventContainer = etl::list<EventType, DEFERRED_EVENT_QUEUE_SIZE>;
         using ActionType = Action<EventType>;
         using ActionQueue = Queue<ActionType *>; // Typ kolejki akcji. Maszyna odkłada na taką kolejkę akcje entry, exit i transition.
         using StateType = State<EventType>;
@@ -162,22 +166,8 @@ public:
         using TransitionType = Transition<EventType>;
 
         StateMachine (uint32_t logId = 0, bool useOnlyOneInputAtATime = false)
-            : lastAddedState (nullptr),
-              lastAddedTransition (nullptr),
-              lastAddedTransitionRF (nullptr),
-              lastAddedTransitionRL (nullptr),
-              lastAddedAction (nullptr),
-              initialState (nullptr),
-              currentState (nullptr),
-              firstTransitionRL (nullptr),
-              firstTransitionRF (nullptr),
-              eventQueue (EVENT_QUEUE_SIZE),
-              actionQueue (ACTION_QUEUE_SIZE),
-              logId (logId),
-              synchroCounter (nullptr),
-              useOnlyOneInputAtATime (useOnlyOneInputAtATime)
+            : eventQueue (EVENT_QUEUE_SIZE), actionQueue (ACTION_QUEUE_SIZE), logId (logId), useOnlyOneInputAtATime (useOnlyOneInputAtATime)
         {
-                memset (states, 0, sizeof (states));
         }
 
         /**
@@ -218,23 +208,26 @@ public:
         StateMachine *then (ActionType *action); /// Akcja do ostatnio dodanego przejścia (transition).
         template <typename Func> StateMachine *thenf (Func func) { return then (new FuncAction<EventType, Func> (func)); }
 
+        StateMachine *defer (uint8_t stateLabel, bool global = false);
+
         EventQueue &getEventQueue () { return eventQueue; }
         EventQueue const &getEventQueue () const { return eventQueue; }
 
         void setInitialState (StateType *s);
         void setInitialState (uint8_t stateLabel);
-        void addState (StateType *s);
+        //        void addState (StateType *s);
         void addGlobalTransition (TransitionType *t, TransitionPriority run = TransitionPriority::RUN_LAST);
+        void addDeferredEventCondition (Condition<EventT> *cond);
 
 private:
         bool check (ConditionType &condition, uint8_t inputNum, EventType &retainedInput);
 
 private:
-        StateType *lastAddedState;
-        TransitionType *lastAddedTransition;
-        TransitionType *lastAddedTransitionRF;
-        TransitionType *lastAddedTransitionRL;
-        ActionType *lastAddedAction;
+        StateType *lastAddedState = nullptr;
+        TransitionType *lastAddedTransition = nullptr;
+        TransitionType *lastAddedTransitionRF = nullptr;
+        TransitionType *lastAddedTransitionRL = nullptr;
+        ActionType *lastAddedAction = nullptr;
 
 #ifndef UNIT_TEST
 private:
@@ -265,19 +258,20 @@ public:
 private:
 #endif
 
-        StateType *initialState;
-        StateType *currentState;
-        TransitionType *firstTransitionRL; /// Run last
-        TransitionType *firstTransitionRF; /// Run First
+        StateType *initialState = nullptr;
+        StateType *currentState = nullptr;
+        TransitionType *firstTransitionRL = nullptr; /// Run last
+        TransitionType *firstTransitionRF = nullptr; /// Run First
         EventQueue eventQueue;
-        StateType *states[MAX_STATES_NUM];
+        DeferredEventContainer deferredEventQueue;
+        StateType states[MAX_STATES_NUM];
         // Z kolejki jest kopiowane tutaj kiedy warunek zostanie spełniony i ma ustawione RETAIN
         EventType inputCopy;
         ActionQueue actionQueue;
         TimeCounter *timeCounter = nullptr;
         uint32_t logId;
-        uint8_t *synchroCounter;
-        uint8_t synchroModulo;
+        uint8_t *synchroCounter = nullptr;
+        uint8_t synchroModulo = 0;
 
         /**
          * Kiedy true, to maszyna pracuje na jednym wejściu na raz. To oznacza, że warunki są sprawdzane tylko na jednym wejściu,
@@ -287,6 +281,7 @@ private:
          * Domyślnie false
          */
         bool useOnlyOneInputAtATime;
+        Condition<EventT> *deferredEventCondition = nullptr;
 };
 
 /*****************************************************************************/
@@ -336,6 +331,13 @@ template <typename EventT> bool StateMachine<EventT>::fixCurrentState ()
 
 template <typename EventT> bool StateMachine<EventT>::check (ConditionType &condition, uint8_t inputNum, EventType &retainedInput)
 {
+        for (auto i = deferredEventQueue.begin (); i != deferredEventQueue.end (); ++i) {
+                if (condition.check (*i, retainedInput)) {
+                        deferredEventQueue.erase (i);
+                        return true;
+                }
+        }
+
         if (eventQueue.size ()) {
 
                 /*
@@ -385,6 +387,41 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
         {
                 InterruptLock<CortexMInterruptControl> lock;
                 noOfInputs = (useOnlyOneInputAtATime) ? (1) : (eventQueue.size ());
+        }
+
+        /*
+         * TODO suboptimal : 1. Checks the condiution 2 times - here, and then when looking for a transition,
+         * 2. copies events which may be heavy.
+         */
+        for (ConditionType *c = currentState->deferredEventCondition; c != nullptr; c = c->next) {
+                for (int i = 0; i < noOfInputs; ++i) {
+                        EventType &e = eventQueue.front (i);
+
+                        if (c->check (e, inputCopy)) {
+                                if (deferredEventQueue.full ()) {
+                                        // TODO lepsza obsługa błędów.
+                                        Error_Handler ();
+                                }
+
+                                deferredEventQueue.push_back (e);
+                        }
+                }
+        }
+
+        // TODO this is copy pasted.
+        for (ConditionType *c = deferredEventCondition; c != nullptr; c = c->next) {
+                for (int i = 0; i < noOfInputs; ++i) {
+                        EventType &e = eventQueue.front (i);
+
+                        if (c->check (e, inputCopy)) {
+                                if (deferredEventQueue.full ()) {
+                                        // TODO lepsza obsługa błędów.
+                                        Error_Handler ();
+                                }
+
+                                deferredEventQueue.push_back (e);
+                        }
+                }
         }
 
         while (1) {
@@ -453,7 +490,7 @@ template <typename EventT> void StateMachine<EventT>::performTransition (Transit
         // - transition dla przejscia
         pushBackAction (t->getAction ());
         // - Entry.
-        currentState = states[t->getTo ()];
+        currentState = &states[t->getTo ()];
 
         if (!currentState) {
                 errorCondition (NO_SUCH_STATE);
@@ -521,7 +558,7 @@ template <typename EventT> void StateMachine<EventT>::setInitialState (StateType
 
 /*****************************************************************************/
 
-template <typename EventT> void StateMachine<EventT>::setInitialState (uint8_t stateLabel) { initialState = states[stateLabel]; }
+template <typename EventT> void StateMachine<EventT>::setInitialState (uint8_t stateLabel) { initialState = &states[stateLabel]; }
 
 /*****************************************************************************/
 
@@ -549,14 +586,14 @@ template <typename EventT> void StateMachine<EventT>::addGlobalTransition (Trans
 
 /*****************************************************************************/
 
-template <typename EventT> void StateMachine<EventT>::addState (StateType *s)
-{
-        if (s->getLabel () >= MAX_STATES_NUM) {
-                errorCondition (STATES_ARRAY_FULL);
-        }
+// template <typename EventT> void StateMachine<EventT>::addState (StateType *s)
+//{
+//        if (s->getLabel () >= MAX_STATES_NUM) {
+//                errorCondition (STATES_ARRAY_FULL);
+//        }
 
-        states[s->getLabel ()] = s;
-}
+//        states[s->getLabel ()] = s;
+//}
 
 /*****************************************************************************/
 
@@ -579,8 +616,12 @@ template <typename EventT> void StateMachine<EventT>::pushBackAction (ActionType
 
 /*****************************************************************************/
 
-template <typename EventT> void StateMachine<EventT>::errorCondition (Error e)
+template <typename EventT> void StateMachine<EventT>::errorCondition (Error)
 {
+#ifdef UNIT_TEST
+        abort ();
+#endif
+
         while (true) {
         }
 }
@@ -589,9 +630,10 @@ template <typename EventT> void StateMachine<EventT>::errorCondition (Error e)
 
 template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::state (uint8_t label, StateFlags flags)
 {
-        lastAddedState = new StateType (label);
+        lastAddedState = &states[label];
+        lastAddedState->label = label;
         lastAddedState->setFlags (flags);
-        addState (lastAddedState);
+        //        addState (lastAddedState);
 
         if ((flags & StateFlags::INITIAL) == StateFlags::INITIAL) {
                 setInitialState (lastAddedState);
@@ -708,6 +750,41 @@ template <typename EventT> uint8_t StateMachine<EventT>::getCurrentStateLabel ()
         }
         else {
                 return 0;
+        }
+}
+
+/*****************************************************************************/
+
+template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::defer (uint8_t stateLabel, bool global)
+{
+        if (!lastAddedTransition && !lastAddedTransition->getCondition ()) {
+                errorCondition (NO_LAST_ADDED_TRANSITION);
+        }
+
+        if (global) {
+                addDeferredEventCondition (lastAddedTransition->getCondition ());
+        }
+        else {
+                StateType &state = states[stateLabel];
+                state.addDeferredEventCondition (lastAddedTransition->getCondition ());
+        }
+        return this;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> void StateMachine<EventT>::addDeferredEventCondition (Condition<EventT> *cond)
+{
+        if (!deferredEventCondition) {
+                deferredEventCondition = cond;
+                return;
+        }
+
+        for (auto c = deferredEventCondition; c != nullptr; c = c->next) {
+                if (!c->next) {
+                        c->next = cond;
+                        return;
+                }
         }
 }
 

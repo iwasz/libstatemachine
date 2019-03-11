@@ -40,7 +40,7 @@ template <typename EventT> bool BeginsWithCondition<EventT>::checkImpl (EventTyp
         auto &condition = StringCondition<EventType>::condition;
         auto stripInput = StringCondition<EventType>::stripInput;
 
-        if (event.empty ()) {
+        if (event.size () == 0) {
                 return condition.empty ();
         }
 

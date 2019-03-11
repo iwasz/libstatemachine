@@ -15,6 +15,7 @@
 
 template <typename EventT> class Transition;
 template <typename EventT> class Action;
+template <typename EventT> class Condition;
 
 /// bit fields
 enum class StateFlags : uint8_t { NONE = 0x00, INITIAL = 0x01, INC_SYNCHRO = 0x02, SUPPRESS_GLOBAL_TRANSITIONS = 0x04 };
@@ -40,21 +41,7 @@ inline StateFlags operator& (StateFlags lhs, StateFlags rhs)
  */
 template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class State {
 public:
-        /**
-         * @brief State
-         * @param label Służy do odróżniania stanów (nie są rozróżniane po wskaźnikach). Nie może być 0, ale nie ma sprawdzenia!
-         * @param entryAction
-         * @param exitAction
-         */
-        State (uint8_t label, Action<EventT> *entryAction = nullptr, Action<EventT> *exitAction = nullptr)
-            : entryAction (entryAction),
-              exitAction (exitAction),
-              label (label),
-              firstTransition (nullptr),
-              lastAddedTransition (nullptr),
-              flags (StateFlags::INITIAL | StateFlags::INC_SYNCHRO)
-        {
-        }
+        State () = default;
 
         Action<EventT> *getEntryAction () { return entryAction; }
         void setEntryAction (Action<EventT> *a) { entryAction = a; }
@@ -70,16 +57,20 @@ public:
         StateFlags getFlags () const { return flags; }
         void setFlags (StateFlags value) { flags = value; }
 
+        void addDeferredEventCondition (Condition<EventT> *cond);
+
 #ifndef UNIT_TEST
 private:
 #endif
+        template <typename T> friend class StateMachine;
 
-        Action<EventT> *entryAction;
-        Action<EventT> *exitAction;
-        uint8_t label;
-        Transition<EventT> *firstTransition;
-        Transition<EventT> *lastAddedTransition;
-        StateFlags flags;
+        Action<EventT> *entryAction = nullptr;
+        Action<EventT> *exitAction = nullptr;
+        uint8_t label = 0;
+        Transition<EventT> *firstTransition = nullptr;
+        Transition<EventT> *lastAddedTransition = nullptr;
+        StateFlags flags = StateFlags::NONE;
+        Condition<EventT> *deferredEventCondition = nullptr;
 };
 
 /*****************************************************************************/
@@ -92,6 +83,23 @@ template <typename EventT> void State<EventT>::addTransition (Transition<EventT>
         else {
                 lastAddedTransition->next = t;
                 lastAddedTransition = t;
+        }
+}
+
+/*****************************************************************************/
+
+template <typename EventT> void State<EventT>::addDeferredEventCondition (Condition<EventT> *cond)
+{
+        if (!deferredEventCondition) {
+                deferredEventCondition = cond;
+                return;
+        }
+
+        for (auto c = deferredEventCondition; c != nullptr; c = c->next) {
+                if (!c->next) {
+                        c->next = cond;
+                        return;
+                }
         }
 }
 

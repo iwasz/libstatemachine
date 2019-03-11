@@ -17,6 +17,7 @@
 static constexpr size_t MAX_STATES_NUM = 64;
 static constexpr size_t ACTION_QUEUE_SIZE = 8;
 static constexpr size_t EVENT_QUEUE_SIZE = 8;
+static constexpr size_t DEFERRED_EVENT_QUEUE_SIZE = 4;
 
 using string = etl::string<64>;
 

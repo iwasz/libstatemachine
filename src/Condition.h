@@ -33,6 +33,8 @@ template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> struct Conditi
         virtual bool getResult () const { return result; }
         virtual void reset () { result = false; }
 
+        Condition *next = nullptr;
+
 protected:
         Condition (InputRetention r = InputRetention::IGNORE_INPUT) : retainInput (r) {}
 

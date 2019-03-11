@@ -103,7 +103,7 @@ public:
 #ifndef UNIT_TEST
 protected:
 #endif
-        virtual bool checkImpl (EventType const &event) const override { return !event.empty (); }
+        virtual bool checkImpl (EventType const &event) const override { return event.size () > 0; }
 };
 
 /*****************************************************************************/
