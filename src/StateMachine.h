@@ -331,13 +331,6 @@ template <typename EventT> bool StateMachine<EventT>::fixCurrentState ()
 
 template <typename EventT> bool StateMachine<EventT>::check (ConditionType &condition, uint8_t inputNum, EventType &retainedInput)
 {
-        for (auto i = deferredEventQueue.begin (); i != deferredEventQueue.end (); ++i) {
-                if (condition.check (*i, retainedInput)) {
-                        deferredEventQueue.erase (i);
-                        return true;
-                }
-        }
-
         if (eventQueue.size ()) {
 
                 /*
@@ -347,6 +340,10 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
                         if (condition.check (eventQueue.front (i), retainedInput)) {
                                 break;
                         }
+                }
+
+                if (condition.getResult ()) {
+                    return true;
                 }
         }
         else {
@@ -358,9 +355,21 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
                  * i.e. there was no response from the modem.
                  */
                 condition.check (EventType (), retainedInput);
+
+                if (condition.getResult ()) {
+                    return true;
+                }
+
         }
 
-        return condition.getResult ();
+        for (auto i = deferredEventQueue.begin (); i != deferredEventQueue.end (); ++i) {
+                if (condition.check (*i, retainedInput)) {
+                        deferredEventQueue.erase (i);
+                        return true;
+                }
+        }
+
+        return false;
 }
 
 /*****************************************************************************/
@@ -454,7 +463,7 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                 }
         }
 
-#ifndef UNIT_TEST
+#if !defined (UNIT_TEST) && 0
         for (int i = 0; i < noOfInputs; ++i) {
                 // I call "from_isr" version because I lock by myself.
                 // eventQueue.pop_from_isr ();
