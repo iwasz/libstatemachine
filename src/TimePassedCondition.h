@@ -39,9 +39,9 @@ template <typename EventT> bool TimePassedCondition<EventT>::checkImpl (const Ev
         bool b = timeCounter->msSinceLastStateChange () > msPassed;
 
 #ifndef UNIT_TEST
-        if (b) {
-                printf ("Timeout reached : [%d]\n", msPassed);
-        }
+//        if (b) {
+//                printf ("Timeout reached : [%d]\n", msPassed);
+//        }
 #endif
 
         return b;

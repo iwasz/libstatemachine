@@ -152,6 +152,9 @@
  * are run all at once.
  *
  * TODO Deferred event implenentation is shitty.
+ *
+ * TODO strasznie ciężko jest się połapać co się dzieje kiedy maszyna źle działa. Trzebaby poprawić debugi
+ * tak, żeby pokazywały wejścia, zamiany stanów, wywołania akcji I WARUNKI we własciwej kolejności!
  */
 template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class StateMachine {
 public:
@@ -463,7 +466,7 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                 }
         }
 
-#if !defined (UNIT_TEST) && 0
+#if /*!defined (UNIT_TEST) &&*/ 1
         for (int i = 0; i < noOfInputs; ++i) {
                 // I call "from_isr" version because I lock by myself.
                 // eventQueue.pop_from_isr ();
@@ -505,7 +508,7 @@ template <typename EventT> void StateMachine<EventT>::performTransition (Transit
                 errorCondition (NO_SUCH_STATE);
         }
 
-#if 1 && !defined(UNIT_TEST)
+#if 1 /*&& !defined(UNIT_TEST)*/
         uint8_t currentLabel = currentState->getLabel ();
         debug->print ("transition : ");
         debug->println (currentLabel);

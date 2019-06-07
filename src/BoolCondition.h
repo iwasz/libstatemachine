@@ -38,7 +38,7 @@ public:
         bool checkImpl (EventType const &) const override { return true; }
 };
 
-static TrueCondition alwaysTrue;
+static TrueCondition<> alwaysTrue;
 
 /**
  * Always false condition.
