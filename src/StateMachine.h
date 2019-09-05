@@ -155,6 +155,10 @@
  *
  * TODO strasznie ciężko jest się połapać co się dzieje kiedy maszyna źle działa. Trzebaby poprawić debugi
  * tak, żeby pokazywały wejścia, zamiany stanów, wywołania akcji I WARUNKI we własciwej kolejności!
+ *
+ * TODO Żeby dało się robić transition bez warunków (co by działo jak alwaysTrue).
+ *
+ * TODO żeby do eventów moża było bez problemu dodawać dowlną liczbę argumentów o dowolnych typach.
  */
 template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class StateMachine {
 public:
@@ -466,7 +470,7 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                 }
         }
 
-#if /*!defined (UNIT_TEST) &&*/ 1
+#if !defined (UNIT_TEST)
         for (int i = 0; i < noOfInputs; ++i) {
                 // I call "from_isr" version because I lock by myself.
                 // eventQueue.pop_from_isr ();
@@ -508,7 +512,7 @@ template <typename EventT> void StateMachine<EventT>::performTransition (Transit
                 errorCondition (NO_SUCH_STATE);
         }
 
-#if 1 /*&& !defined(UNIT_TEST)*/
+#if !defined(UNIT_TEST)
         uint8_t currentLabel = currentState->getLabel ();
         debug->print ("transition : ");
         debug->println (currentLabel);

@@ -33,16 +33,16 @@ protected:
 };
 
 /*
- * TODO przyjżeć się tej implementacji jak będę wyspany.
+ *
  */
 template <typename EventT> bool LikeCondition<EventT>::checkImpl (EventType const &event) const
 {
         auto &condition = StringCondition<EventType>::condition;
         auto stripInput = StringCondition<EventType>::stripInput;
 
-//        if (event.empty ()) {
-//                return condition.empty ();
-//        }
+        //        if (event.empty ()) {
+        //                return condition.empty ();
+        //        }
 
         size_t ei = 0;
         size_t ci = 0;
@@ -74,7 +74,7 @@ template <typename EventT> bool LikeCondition<EventT>::checkImpl (EventType cons
                         }
 
                         do {
-                                while (ei < event.size () && (event.at (ei) != condition.at (ci))) {
+                                while (ei < event.size () && ci < condition.size () && (event.at (ei) != condition.at (ci))) {
                                         ++ei;
                                 }
 
@@ -84,7 +84,7 @@ template <typename EventT> bool LikeCondition<EventT>::checkImpl (EventType cons
                                 }
 
                                 size_t ci1 = ci;
-                                while (ci1 < condition.size () && condition.at (ci1) != '%' && condition.at (ci1) != '_'
+                                while (ei < event.size () && ci1 < condition.size () && condition.at (ci1) != '%' && condition.at (ci1) != '_'
                                        && (event.at (ei) == condition.at (ci1))) {
                                         ++ei;
                                         ++ci1;

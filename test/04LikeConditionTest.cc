@@ -13,7 +13,7 @@
 #include <cstring>
 #include <string>
 #include <vector>
-
+#if 0
 /**
  * @brief TEST_CASE
  */
@@ -151,4 +151,12 @@ TEST_CASE ("Like condition all", "[StateMachine Conditions]")
         REQUIRE (like1.checkImpl ("a"));
         REQUIRE (like1.checkImpl ("ajkds ds sd dsf dfkjldskjldf"));
         REQUIRE (like1.checkImpl ("")); // Data base (which DB) like operator catches even empty strings, so mine behaves the same.
+}
+#endif
+
+// Taki błąd miałem, SIGABORT...
+TEST_CASE ("Like condition error", "[StateMachine Conditions]")
+{
+        LikeCondition like ("%ERROR%");
+        REQUIRE (!like.checkImpl ("_CLOSE"));
 }
