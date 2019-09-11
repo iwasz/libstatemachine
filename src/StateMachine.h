@@ -159,6 +159,9 @@
  * TODO Żeby dało się robić transition bez warunków (co by działo jak alwaysTrue).
  *
  * TODO żeby do eventów moża było bez problemu dodawać dowlną liczbę argumentów o dowolnych typach.
+
+TODO żeby nazwy stanów nie musiałby być definiowane osobno w enumie, i żeby łatwo się je dało
+ * wypisać na debug. Może user-defined literals?
  */
 template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class StateMachine {
 public:
