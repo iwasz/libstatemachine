@@ -172,8 +172,14 @@ public:
         using ConditionType = Condition<EventType>;
         using TransitionType = Transition<EventType>;
 
-        StateMachine (uint32_t logId = 0, bool useOnlyOneInputAtATime = false)
-            : eventQueue (EVENT_QUEUE_SIZE), actionQueue (ACTION_QUEUE_SIZE), logId (logId), useOnlyOneInputAtATime (useOnlyOneInputAtATime)
+        enum class Log { NO, YES };
+
+        StateMachine (uint32_t logId = 0, bool useOnlyOneInputAtATime = false, Log log = Log::YES)
+            : eventQueue (EVENT_QUEUE_SIZE),
+              actionQueue (ACTION_QUEUE_SIZE),
+              logId (logId),
+              useOnlyOneInputAtATime (useOnlyOneInputAtATime),
+              log (log)
         {
         }
 
@@ -289,6 +295,7 @@ private:
          */
         bool useOnlyOneInputAtATime;
         Condition<EventT> *deferredEventCondition = nullptr;
+        Log log;
 };
 
 /*****************************************************************************/
@@ -317,10 +324,12 @@ template <typename EventT> bool StateMachine<EventT>::fixCurrentState ()
         if (!currentState) {
                 currentState = initialState;
 
-#ifndef UNIT_TEST
-                uint8_t currentLabel = currentState->getLabel ();
-                debug->print ("fixCurrentState : ");
-                debug->println (currentLabel);
+#if !defined(UNIT_TEST)
+                if (log == Log::YES) {
+                        uint8_t currentLabel = currentState->getLabel ();
+                        debug->print ("fixCurrentState : ");
+                        debug->println (currentLabel);
+                }
 #endif
 
                 if (timeCounter) {
@@ -350,7 +359,7 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
                 }
 
                 if (condition.getResult ()) {
-                    return true;
+                        return true;
                 }
         }
         else {
@@ -364,9 +373,8 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
                 condition.check (EventType (), retainedInput);
 
                 if (condition.getResult ()) {
-                    return true;
+                        return true;
                 }
-
         }
 
         for (auto i = deferredEventQueue.begin (); i != deferredEventQueue.end (); ++i) {
@@ -470,13 +478,15 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                 }
         }
 
-#if !defined (UNIT_TEST)
-        for (int i = 0; i < noOfInputs; ++i) {
-                // I call "from_isr" version because I lock by myself.
-                // eventQueue.pop_from_isr ();
-                debug->print ("IN : ");
-                debug->print ((uint8_t *)eventQueue.front (i).data (), eventQueue.front (i).size ());
-                debug->println ("");
+#if !defined(UNIT_TEST)
+        if (log == Log::YES) {
+                for (int i = 0; i < noOfInputs; ++i) {
+                        // I call "from_isr" version because I lock by myself.
+                        // eventQueue.pop_from_isr ();
+                        debug->print ("IN : ");
+                        debug->print ((uint8_t *)eventQueue.front (i).data (), eventQueue.front (i).size ());
+                        debug->println ("");
+                }
         }
 #endif
 
@@ -513,9 +523,11 @@ template <typename EventT> void StateMachine<EventT>::performTransition (Transit
         }
 
 #if !defined(UNIT_TEST)
-        uint8_t currentLabel = currentState->getLabel ();
-        debug->print ("transition : ");
-        debug->println (currentLabel);
+        if (log == Log::YES) {
+                uint8_t currentLabel = currentState->getLabel ();
+                debug->print ("transition : ");
+                debug->println (currentLabel);
+        }
 #endif
 
         if (timeCounter) {
