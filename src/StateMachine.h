@@ -451,7 +451,7 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                 }
         }
 
-        while (1) {
+        while (true) {
 
                 if (!t || !t->getCondition () || !check (*t->getCondition (), noOfInputs, inputCopy)) {
 
