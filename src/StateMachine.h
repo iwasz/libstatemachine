@@ -29,12 +29,12 @@
 #include "StateCondition.h"
 #include "StateMachineTypes.h"
 #include "StringCondition.h"
-#include "StringQueue.h"
 #include "TimeCounter.h"
 #include "TimePassedCondition.h"
 #include "Transition.h"
 #include <cstring>
 #include <etl/list.h>
+#include <etl/queue.h>
 
 // TODO
 // namespace sm {
@@ -170,7 +170,9 @@ public:
         using EventQueue = typename Types::EventQueue;
         using DeferredEventContainer = etl::list<EventType, DEFERRED_EVENT_QUEUE_SIZE>;
         using ActionType = Action<EventType>;
-        using ActionQueue = Queue<ActionType *>; // Typ kolejki akcji. Maszyna odkłada na taką kolejkę akcje entry, exit i transition.
+        using ActionQueue = etl::queue<ActionType *, ACTION_QUEUE_SIZE,
+                                       etl::memory_model::MEMORY_MODEL_SMALL>; // Typ kolejki akcji. Maszyna odkłada na taką kolejkę akcje entry,
+                                                                               // exit i transition.
         using StateType = State<EventType>;
         using ConditionType = Condition<EventType>;
         using TransitionType = Transition<EventType>;
@@ -178,11 +180,7 @@ public:
         enum class Log { NO, YES };
 
         StateMachine (uint32_t logId = 0, bool useOnlyOneInputAtATime = false, Log log = Log::YES)
-            : eventQueue (EVENT_QUEUE_SIZE),
-              actionQueue (ACTION_QUEUE_SIZE),
-              logId (logId),
-              useOnlyOneInputAtATime (useOnlyOneInputAtATime),
-              log (log)
+            : logId (logId), useOnlyOneInputAtATime (useOnlyOneInputAtATime), log (log)
         {
         }
 
@@ -313,7 +311,7 @@ template <typename EventT> bool StateMachine<EventT>::fireActions ()
                         return false;
                 }
                 else {
-                        actionQueue.pop_front ();
+                        actionQueue.pop ();
                 }
         }
 
@@ -356,7 +354,7 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
                  * If state wouldn't be persisted, then
                  */
                 for (int i = 0; i < inputNum; ++i) {
-                        if (condition.check (eventQueue.front (i), retainedInput)) {
+                        if (condition.check (eventQueue.at (i), retainedInput)) {
                                 break;
                         }
                 }
@@ -422,7 +420,7 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
          */
         for (ConditionType *c = currentState->deferredEventCondition; c != nullptr; c = c->next) {
                 for (int i = 0; i < noOfInputs; ++i) {
-                        EventType &e = eventQueue.front (i);
+                        EventType &e = eventQueue.at (i);
 
                         if (c->check (e, inputCopy)) {
                                 if (deferredEventQueue.full ()) {
@@ -438,7 +436,7 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
         // TODO this is copy pasted.
         for (ConditionType *c = deferredEventCondition; c != nullptr; c = c->next) {
                 for (int i = 0; i < noOfInputs; ++i) {
-                        EventType &e = eventQueue.front (i);
+                        EventType &e = eventQueue.at (i);
 
                         if (c->check (e, inputCopy)) {
                                 if (deferredEventQueue.full ()) {
@@ -487,7 +485,7 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                         // I call "from_isr" version because I lock by myself.
                         // eventQueue.pop_from_isr ();
                         debug->print ("IN : ");
-                        debug->print ((uint8_t *)eventQueue.front (i).data (), eventQueue.front (i).size ());
+                        debug->print ((uint8_t *)eventQueue.at (i).data (), eventQueue.at (i).size ());
                         debug->println ("");
                 }
         }
@@ -495,7 +493,9 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
 
         {
                 InterruptLock<CortexMInterruptControl> lock;
-                eventQueue.pop_front (noOfInputs);
+                for (int i = 0; i < noOfInputs; ++i) {
+                        eventQueue.pop_front ();
+                }
         }
 
         /*
@@ -634,15 +634,11 @@ template <typename EventT> void StateMachine<EventT>::pushBackAction (ActionType
                 return;
         }
 
-        //        do {
-        //                pushBackOperation (a);
-        if (!actionQueue.push_back ()) {
+        if (actionQueue.full ()) {
                 errorCondition (OPERATION_QUEUE_FULL);
         }
 
-        typename ActionQueue::Element &el = actionQueue.back ();
-        el = a;
-        //        } while ((a = a->getNext ()));
+        actionQueue.push (a);
 }
 
 /*****************************************************************************/

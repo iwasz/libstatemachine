@@ -6,13 +6,10 @@
  *  ~~~~~~~~~                                                               *
  ****************************************************************************/
 
-#ifndef STATEMACHINETYPES_H
-#define STATEMACHINETYPES_H
-
+#pragma once
 #include "Hal.h"
-#include "collection/Queue.h"
 #include <etl/cstring.h>
-#include <etl/queue_spsc_isr.h>
+#include <etl/deque.h>
 
 static constexpr size_t MAX_STATES_NUM = 64;
 static constexpr size_t ACTION_QUEUE_SIZE = 8;
@@ -29,7 +26,6 @@ template <typename EventT> struct StateMachineTypes {
 
         using EventType = EventT;
         // using EventQueue = etl::queue_spsc_isr<EventType, EVENT_QUEUE_SIZE, InterruptControl, etl::memory_model::MEMORY_MODEL_SMALL>;
-        using EventQueue = Queue<EventType>;
+        using EventQueue = etl::deque<EventType, EVENT_QUEUE_SIZE>;
+        // using EventQueue = Queue<EventType>;
 };
-
-#endif // STATEMACHINETYPES_H

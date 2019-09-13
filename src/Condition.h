@@ -10,7 +10,6 @@
 #define ICONDITION_H
 
 #include "StateMachineTypes.h"
-#include "StringQueue.h"
 
 enum class InputRetention { IGNORE_INPUT, RETAIN_INPUT };
 
