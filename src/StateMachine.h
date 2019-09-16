@@ -310,9 +310,8 @@ template <typename EventT> bool StateMachine<EventT>::fireActions ()
                 if (!finished) {
                         return false;
                 }
-                else {
-                        actionQueue.pop ();
-                }
+
+                actionQueue.pop ();
         }
 
         return true;
@@ -349,12 +348,14 @@ template <typename EventT> bool StateMachine<EventT>::fixCurrentState ()
 template <typename EventT> bool StateMachine<EventT>::check (ConditionType &condition, uint8_t inputNum, EventType &retainedInput)
 {
         if (eventQueue.size ()) {
-
-                /*
-                 * If state wouldn't be persisted, then
-                 */
                 for (int i = 0; i < inputNum; ++i) {
-                        if (condition.check (eventQueue.at (i), retainedInput)) {
+                        EventT &e = eventQueue.at (i);
+
+                        if (condition.check (e)) {
+                                if (condition.getRetainInput () == InputRetention::RETAIN_INPUT) {
+                                        inputCopy = std::move (e);
+                                }
+
                                 break;
                         }
                 }
@@ -371,19 +372,19 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
                  * it will catch this dummy event even though there was no "real" event
                  * i.e. there was no response from the modem.
                  */
-                condition.check (EventType (), retainedInput);
+                condition.check (EventType ());
 
                 if (condition.getResult ()) {
                         return true;
                 }
         }
 
-        for (auto i = deferredEventQueue.begin (); i != deferredEventQueue.end (); ++i) {
-                if (condition.check (*i, retainedInput)) {
-                        deferredEventQueue.erase (i);
-                        return true;
-                }
-        }
+        //        for (auto i = deferredEventQueue.begin (); i != deferredEventQueue.end (); ++i) {
+        //                if (condition.check (*i, retainedInput)) {
+        //                        deferredEventQueue.erase (i);
+        //                        return true;
+        //                }
+        //        }
 
         return false;
 }
@@ -418,36 +419,36 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
          * TODO suboptimal : 1. Checks the condiution 2 times - here, and then when looking for a transition,
          * 2. copies events which may be heavy.
          */
-        for (ConditionType *c = currentState->deferredEventCondition; c != nullptr; c = c->next) {
-                for (int i = 0; i < noOfInputs; ++i) {
-                        EventType &e = eventQueue.at (i);
+        //        for (ConditionType *c = currentState->deferredEventCondition; c != nullptr; c = c->next) {
+        //                for (int i = 0; i < noOfInputs; ++i) {
+        //                        EventType &e = eventQueue.at (i);
 
-                        if (c->check (e, inputCopy)) {
-                                if (deferredEventQueue.full ()) {
-                                        // TODO lepsza obsługa błędów.
-                                        Error_Handler ();
-                                }
+        //                        if (c->check (e, inputCopy)) {
+        //                                if (deferredEventQueue.full ()) {
+        //                                        // TODO lepsza obsługa błędów.
+        //                                        Error_Handler ();
+        //                                }
 
-                                deferredEventQueue.push_back (e);
-                        }
-                }
-        }
+        //                                deferredEventQueue.push_back (e);
+        //                        }
+        //                }
+        //        }
 
-        // TODO this is copy pasted.
-        for (ConditionType *c = deferredEventCondition; c != nullptr; c = c->next) {
-                for (int i = 0; i < noOfInputs; ++i) {
-                        EventType &e = eventQueue.at (i);
+        //        // TODO this is copy pasted.
+        //        for (ConditionType *c = deferredEventCondition; c != nullptr; c = c->next) {
+        //                for (int i = 0; i < noOfInputs; ++i) {
+        //                        EventType &e = eventQueue.at (i);
 
-                        if (c->check (e, inputCopy)) {
-                                if (deferredEventQueue.full ()) {
-                                        // TODO lepsza obsługa błędów.
-                                        Error_Handler ();
-                                }
+        //                        if (c->check (e, inputCopy)) {
+        //                                if (deferredEventQueue.full ()) {
+        //                                        // TODO lepsza obsługa błędów.
+        //                                        Error_Handler ();
+        //                                }
 
-                                deferredEventQueue.push_back (e);
-                        }
-                }
-        }
+        //                                deferredEventQueue.push_back (e);
+        //                        }
+        //                }
+        //        }
 
         while (true) {
 
@@ -764,7 +765,7 @@ template <typename EventT> void StateMachine<EventT>::reset (/*uint8_t state*/)
         //         timeCounter->reset ();
         // }
 
-        inputCopy[0] = '\0';
+        inputCopy.clear ();
         actionQueue.clear ();
 }
 
@@ -775,9 +776,8 @@ template <typename EventT> uint8_t StateMachine<EventT>::getCurrentStateLabel ()
         if (currentState) {
                 return currentState->getLabel ();
         }
-        else {
-                return 0;
-        }
+
+        return 0;
 }
 
 /*****************************************************************************/

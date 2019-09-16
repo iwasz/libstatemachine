@@ -6,9 +6,7 @@
  *  ~~~~~~~~~                                                               *
  ****************************************************************************/
 
-#ifndef ORCONDITION_H
-#define ORCONDITION_H
-
+#pragma once
 #include "Condition.h"
 
 /**
@@ -19,6 +17,7 @@ public:
         using EventType = EventT;
 
         OrCondition (Condition<EventT> *a, Condition<EventT> *b) : a (a) /*, conditionAMet (false)*/, b (b) /*, conditionBMet (false)*/ {}
+        ~OrCondition () override = default;
 
         bool getResult () const override { return a->getResult () || b->getResult (); }
         void reset () override
@@ -27,14 +26,14 @@ public:
                 b->reset ();
         }
 
-        virtual bool check (EventType const &event, EventType &retainedEvent) const override
+        bool check (EventType const &event) const override
         {
                 if (!a->getResult () && !b->getResult ()) {
-                        a->check (event, retainedEvent);
+                        a->check (event);
                 }
 
                 if (!a->getResult () && !b->getResult ()) {
-                        b->check (event, retainedEvent);
+                        b->check (event);
                 }
 
                 return getResult ();
@@ -51,5 +50,3 @@ template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> OrCondition<Ev
 {
         return new OrCondition<EventT> (a, b);
 }
-
-#endif // ORCONDITION_H

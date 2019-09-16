@@ -6,9 +6,7 @@
  *  ~~~~~~~~~                                                               *
  ****************************************************************************/
 
-#ifndef ICONDITION_H
-#define ICONDITION_H
-
+#pragma once
 #include "StateMachineTypes.h"
 
 enum class InputRetention { IGNORE_INPUT, RETAIN_INPUT };
@@ -28,21 +26,28 @@ template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> struct Conditi
          * @param inputConsumed
          * @return
          */
-        virtual bool check (EventType const &event, EventType &retainedEvent) const;
-        virtual bool getResult () const { return result; }
-        virtual void reset () { result = false; }
-
-        Condition *next = nullptr;
-
-protected:
-        Condition (InputRetention r = InputRetention::IGNORE_INPUT) : retainInput (r) {}
+        virtual bool check (EventType const &event) const
+        {
+                result = checkImpl (event);
+                return result;
+        }
 
         /**
          * @brief Sprawdza jakiś warunek.
          * @param data Dane wejściowe z kolejki.
          * @return Czy warunek jest spełniony
          */
-        virtual bool checkImpl (EventType const &) const { return false; }
+        virtual bool checkImpl (EventType const & /*event*/) const { return false; }
+
+        virtual bool getResult () const { return result; }
+        virtual void reset () { result = false; }
+
+        Condition *next = nullptr;
+
+        InputRetention getRetainInput () const { return retainInput; }
+
+protected:
+        Condition (InputRetention r = InputRetention::IGNORE_INPUT) : retainInput (r) {}
 
 private:
         InputRetention retainInput;
@@ -50,17 +55,6 @@ private:
 };
 
 /*****************************************************************************/
-
-template <typename EventT> bool Condition<EventT>::check (EventType const &event, EventType &retainedEvent) const
-{
-        result = checkImpl (event);
-
-        if (result && retainInput == InputRetention::RETAIN_INPUT) {
-                retainedEvent = event;
-        }
-
-        return result;
-}
 
 /**
  * Można podać np. lambdę.
@@ -75,5 +69,3 @@ public:
 private:
         Func func;
 };
-
-#endif // ICONDITION_H

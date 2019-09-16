@@ -6,9 +6,7 @@
  *  ~~~~~~~~~                                                               *
  ****************************************************************************/
 
-#ifndef ANDCONDITION_H
-#define ANDCONDITION_H
-
+#pragma once
 #include "Condition.h"
 
 /**
@@ -21,7 +19,7 @@ public:
         using EventType = EventT;
 
         AndCondition (Condition<EventType> *a, Condition<EventType> *b) : a (a), b (b) {}
-        virtual ~AndCondition () override = default;
+        ~AndCondition () override = default;
 
         bool getResult () const override { return a->getResult () && b->getResult (); }
         void reset () override
@@ -30,14 +28,14 @@ public:
                 b->reset ();
         }
 
-        virtual bool check (EventType const &event, EventType &retainedEvent) const override
+        bool check (EventType const &event) const override
         {
                 if (!a->getResult ()) {
-                        a->check (event, retainedEvent);
+                        a->check (event);
                 }
 
                 if (!b->getResult ()) {
-                        b->check (event, retainedEvent);
+                        b->check (event);
                 }
 
                 return getResult ();
@@ -54,5 +52,3 @@ template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> AndCondition<E
 {
         return new AndCondition<EventT> (a, b);
 }
-
-#endif // ANDCONDITION_H
