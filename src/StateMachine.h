@@ -179,7 +179,7 @@ public:
         using TransitionType = Transition<EventType>;
 
         enum class Log { NO, YES };
-        static constexpr size_t MAX_LOG_LINE_SIZE = 1024;
+        static constexpr size_t MAX_LOG_LINE_SIZE = 20;
 
         StateMachine (uint32_t logId = 0, bool useOnlyOneInputAtATime = false, Log log = Log::YES)
             : logId (logId), useOnlyOneInputAtATime (useOnlyOneInputAtATime), log (log)
@@ -415,12 +415,20 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
 #if !defined(UNIT_TEST)
         if (log == Log::YES) {
                 for (int i = 0; i < noOfInputs; ++i) {
+                        EventT const &ev = eventQueue.at (i);
+                        size_t size = ev.size ();
+                        EventT copy;
+
+                        auto endIter = ev.cbegin ();
+                        std::advance (endIter, std::min<size_t> (size, MAX_LOG_LINE_SIZE));
+                        std::copy_if (ev.cbegin (), endIter, std::back_inserter (copy),
+                                      [](auto const &chr) -> bool { return chr != '\r' && chr != '\n'; });
+
                         debug->print ("IN (");
-                        size_t currentSize = eventQueue.at (i).size ();
-                        debug->print (currentSize);
+                        debug->print (int(size));
                         debug->print (") : ");
-                        debug->print ((uint8_t *)eventQueue.at (i).data (), std::min<size_t> (currentSize, MAX_LOG_LINE_SIZE));
-                        debug->println ((currentSize > MAX_LOG_LINE_SIZE) ? ("...") : (""));
+                        debug->print ((uint8_t *)copy.data (), copy.size ());
+                        debug->println ((size > MAX_LOG_LINE_SIZE) ? ("...") : (""));
                 }
         }
 #endif
