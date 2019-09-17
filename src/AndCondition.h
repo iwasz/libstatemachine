@@ -28,14 +28,14 @@ public:
                 b->reset ();
         }
 
-        bool check (EventType const &event) const override
+        bool check (EventType &event, EventType &retainedEvent) const override
         {
                 if (!a->getResult ()) {
-                        a->check (event);
+                        a->check (event, retainedEvent);
                 }
 
                 if (!b->getResult ()) {
-                        b->check (event);
+                        b->check (event, retainedEvent);
                 }
 
                 return getResult ();

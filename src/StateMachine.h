@@ -32,6 +32,7 @@
 #include "TimeCounter.h"
 #include "TimePassedCondition.h"
 #include "Transition.h"
+#include <algorithm>
 #include <cstring>
 #include <etl/list.h>
 #include <etl/queue.h>
@@ -178,6 +179,7 @@ public:
         using TransitionType = Transition<EventType>;
 
         enum class Log { NO, YES };
+        static constexpr size_t MAX_LOG_LINE_SIZE = 1024;
 
         StateMachine (uint32_t logId = 0, bool useOnlyOneInputAtATime = false, Log log = Log::YES)
             : logId (logId), useOnlyOneInputAtATime (useOnlyOneInputAtATime), log (log)
@@ -349,13 +351,7 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
 {
         if (eventQueue.size ()) {
                 for (int i = 0; i < inputNum; ++i) {
-                        EventT &e = eventQueue.at (i);
-
-                        if (condition.check (e)) {
-                                if (condition.getRetainInput () == InputRetention::RETAIN_INPUT) {
-                                        inputCopy = std::move (e);
-                                }
-
+                        if (condition.check (eventQueue.at (i), retainedInput)) {
                                 break;
                         }
                 }
@@ -372,7 +368,8 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
                  * it will catch this dummy event even though there was no "real" event
                  * i.e. there was no response from the modem.
                  */
-                condition.check (EventType ());
+                EventType tmp;
+                condition.check (tmp, retainedInput);
 
                 if (condition.getResult ()) {
                         return true;
@@ -414,6 +411,19 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                 InterruptLock<CortexMInterruptControl> lock;
                 noOfInputs = (useOnlyOneInputAtATime) ? (1) : (eventQueue.size ());
         }
+
+#if !defined(UNIT_TEST)
+        if (log == Log::YES) {
+                for (int i = 0; i < noOfInputs; ++i) {
+                        debug->print ("IN (");
+                        size_t currentSize = eventQueue.at (i).size ();
+                        debug->print (currentSize);
+                        debug->print (") : ");
+                        debug->print ((uint8_t *)eventQueue.at (i).data (), std::min<size_t> (currentSize, MAX_LOG_LINE_SIZE));
+                        debug->println ((currentSize > MAX_LOG_LINE_SIZE) ? ("...") : (""));
+                }
+        }
+#endif
 
         /*
          * TODO suboptimal : 1. Checks the condiution 2 times - here, and then when looking for a transition,
@@ -479,18 +489,6 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                         break;
                 }
         }
-
-#if !defined(UNIT_TEST)
-        if (log == Log::YES) {
-                for (int i = 0; i < noOfInputs; ++i) {
-                        // I call "from_isr" version because I lock by myself.
-                        // eventQueue.pop_from_isr ();
-                        debug->print ("IN : ");
-                        debug->print ((uint8_t *)eventQueue.at (i).data (), eventQueue.at (i).size ());
-                        debug->println ("");
-                }
-        }
-#endif
 
         {
                 InterruptLock<CortexMInterruptControl> lock;
