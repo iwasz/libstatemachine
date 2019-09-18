@@ -179,7 +179,7 @@ public:
         using TransitionType = Transition<EventType>;
 
         enum class Log { NO, YES };
-        static constexpr size_t MAX_LOG_LINE_SIZE = 20;
+        static constexpr size_t MAX_LOG_LINE_SIZE = 30;
 
         StateMachine (uint32_t logId = 0, bool useOnlyOneInputAtATime = false, Log log = Log::YES)
             : logId (logId), useOnlyOneInputAtATime (useOnlyOneInputAtATime), log (log)
@@ -237,6 +237,7 @@ public:
 
 private:
         bool check (ConditionType &condition, uint8_t inputNum, EventType &retainedInput);
+        bool skipEvent (EventT const &e) const;
 
 private:
         StateType *lastAddedState = nullptr;
@@ -351,7 +352,13 @@ template <typename EventT> bool StateMachine<EventT>::check (ConditionType &cond
 {
         if (eventQueue.size ()) {
                 for (int i = 0; i < inputNum; ++i) {
-                        if (condition.check (eventQueue.at (i), retainedInput)) {
+                        auto &e = eventQueue.at (i);
+
+                        if (skipEvent (e)) {
+                                continue;
+                        }
+
+                        if (condition.check (e, retainedInput)) {
                                 break;
                         }
                 }
@@ -416,6 +423,11 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
         if (log == Log::YES) {
                 for (int i = 0; i < noOfInputs; ++i) {
                         EventT const &ev = eventQueue.at (i);
+
+                        if (skipEvent (ev)) {
+                                continue;
+                        }
+
                         size_t size = ev.size ();
                         EventT copy;
 
@@ -469,7 +481,6 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
         //        }
 
         while (true) {
-
                 if (!t || !t->getCondition () || !check (*t->getCondition (), noOfInputs, inputCopy)) {
 
                         if (t) {
@@ -525,7 +536,7 @@ template <typename EventT> void StateMachine<EventT>::performTransition (Transit
         pushBackAction (currentState->getExitAction ());
         // - transition dla przejscia
         pushBackAction (t->getAction ());
-        // - Entry.
+
         currentState = &states[t->getTo ()];
 
         if (!currentState) {
@@ -572,6 +583,11 @@ template <typename EventT> void StateMachine<EventT>::run ()
         TransitionType *t = findTransition ();
 
         if (!t) {
+                return;
+        }
+
+        if (t->getTo () == 0) { // TODO hack - jeżeli to jest 0, to nie robimy przejścia, jedynie uruchamiamy akcję transition.
+                pushBackAction (t->getAction ());
                 return;
         }
 
@@ -819,6 +835,34 @@ template <typename EventT> void StateMachine<EventT>::addDeferredEventCondition 
                         return;
                 }
         }
+}
+
+/*****************************************************************************/
+
+template <typename E> bool StateMachine<E>::skipEvent (E const &e) const
+{
+        auto size = e.size ();
+
+        if (size == 0) {
+                return true;
+        }
+
+        auto c1 = e.at (0);
+
+        if (c1 == '\n' || c1 == '\r') {
+                if (size == 1) {
+                        return true;
+                }
+
+                auto c2 = e.at (1);
+                if (c2 == '\n' || c2 == '\r') {
+                        if (size == 2) {
+                                return true;
+                        }
+                }
+        }
+
+        return false;
 }
 
 /*

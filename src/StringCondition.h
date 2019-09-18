@@ -114,4 +114,27 @@ NotEmptyCondition<EventT> *notEmpty (InputRetention retainInput = InputRetention
         return new NotEmptyCondition<EventT> (retainInput);
 }
 
+/*****************************************************************************/
+
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class LengthCondition : public Condition<EventT> {
+public:
+        LengthCondition (size_t *len, InputRetention retainInput = InputRetention::IGNORE_INPUT) : Condition<EventT> (retainInput), len (len) {}
+
+#ifndef UNIT_TEST
+protected:
+#endif
+        bool checkImpl (EventT const &event) const override { return event.size () == *len; }
+
+private:
+        size_t *len;
+};
+
+/*****************************************************************************/
+
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE>
+LengthCondition<EventT> *len (size_t *l, InputRetention retainInput = InputRetention::IGNORE_INPUT)
+{
+        return new LengthCondition<EventT> (l, retainInput);
+}
+
 #endif // STRINGCONDITION_H
