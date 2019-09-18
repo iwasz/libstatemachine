@@ -177,6 +177,7 @@ public:
         using StateType = State<EventType>;
         using ConditionType = Condition<EventType>;
         using TransitionType = Transition<EventType>;
+        using RuleType = Rule<EventType>;
 
         enum class Log { NO, YES };
         static constexpr size_t MAX_LOG_LINE_SIZE = 30;
@@ -218,6 +219,8 @@ public:
                                   TransitionPriority run
                                   = TransitionPriority::RUN_LAST); /// Przejście z ostatnio dodanego stanu do stanu o nazwie "to".
 
+        StateMachine *rule (); /// Przejście z ostatnio dodanego stanu do stanu o nazwie "to".
+
         StateMachine *when (ConditionType *cond); /// Warunek do ostatnio dodanego przejścia (transition).
         template <typename Func> StateMachine *whenf (Func func) { return when (new FuncCondition<EventType, Func> (func)); }
 
@@ -233,6 +236,7 @@ public:
         void setInitialState (uint8_t stateLabel);
         //        void addState (StateType *s);
         void addGlobalTransition (TransitionType *t, TransitionPriority run = TransitionPriority::RUN_LAST);
+        void addGlobalRule (RuleType *r);
         void addDeferredEventCondition (Condition<EventT> *cond);
 
 private:
@@ -245,6 +249,7 @@ private:
         TransitionType *lastAddedTransitionRF = nullptr;
         TransitionType *lastAddedTransitionRL = nullptr;
         ActionType *lastAddedAction = nullptr;
+        RuleType *lastAddedRule = nullptr;
 
 #ifndef UNIT_TEST
 private:
@@ -279,6 +284,7 @@ private:
         StateType *currentState = nullptr;
         TransitionType *firstTransitionRL = nullptr; /// Run last
         TransitionType *firstTransitionRF = nullptr; /// Run First
+        RuleType *globalRule = nullptr;
         EventQueue eventQueue;
         DeferredEventContainer deferredEventQueue;
         StateType states[MAX_STATES_NUM];
@@ -422,10 +428,20 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
 #if !defined(UNIT_TEST)
         if (log == Log::YES) {
                 for (int i = 0; i < noOfInputs; ++i) {
-                        EventT const &ev = eventQueue.at (i);
+                        EventT &ev = eventQueue.at (i);
 
                         if (skipEvent (ev)) {
                                 continue;
+                        }
+
+                        // TODO hacked.
+                        for (RuleType *rule = this->globalRule; rule != nullptr; rule = static_cast<RuleType *> (rule->next)) {
+                                ConditionType *cond = rule->getCondition ();
+
+                                if (cond->check (ev, inputCopy)) {
+                                        ActionType *a = rule->getAction ();
+                                        a->run (ev);
+                                }
                         }
 
                         size_t size = ev.size ();
@@ -586,7 +602,9 @@ template <typename EventT> void StateMachine<EventT>::run ()
                 return;
         }
 
-        if (t->getTo () == 0) { // TODO hack - jeżeli to jest 0, to nie robimy przejścia, jedynie uruchamiamy akcję transition.
+        // TODO hack - jeżeli to jest 0, to nie robimy przejścia, jedynie uruchamiamy akcję transition
+        // TODO zastąpiłem ten mechanizm za pomocą Rule
+        if (t->getTo () == 0) {
                 pushBackAction (t->getAction ());
                 return;
         }
@@ -635,6 +653,17 @@ template <typename EventT> void StateMachine<EventT>::addGlobalTransition (Trans
                         lastAddedTransitionRF->next = t;
                         lastAddedTransitionRF = lastAddedTransition = t;
                 }
+        }
+}
+
+template <typename EventT> void StateMachine<EventT>::addGlobalRule (RuleType *r)
+{
+        if (!lastAddedRule) {
+                globalRule = lastAddedRule = r;
+        }
+        else {
+                lastAddedRule->next = r;
+                lastAddedRule = r;
         }
 }
 
@@ -743,6 +772,14 @@ template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::transitio
                 lastAddedTransition = new TransitionType (nullptr, to);
                 lastAddedState->addTransition (lastAddedTransition);
         }
+        return this;
+}
+
+/*****************************************************************************/
+
+template <typename EventT> StateMachine<EventT> *StateMachine<EventT>::rule ()
+{
+        addGlobalRule (new RuleType (nullptr, 0));
         return this;
 }
 

@@ -43,4 +43,11 @@ private:
         Transition *next;
 };
 
+template <typename E = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class Rule : public Transition <E> {
+public:
+
+        using Transition<E>::Transition;
+
+};
+
 #endif // TRANSITION_H
