@@ -6,10 +6,9 @@
  *  ~~~~~~~~~                                                               *
  ****************************************************************************/
 
-#ifndef SEQUENCE_CONDITION_H
-#define SEQUENCE_CONDITION_H
-
+#pragma once
 #include "Condition.h"
+#include <gsl/gsl>
 
 /**
  * Sequence is like AndCondition, but inputs must fulfill conditions in order.
@@ -18,37 +17,36 @@ template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> class Sequence
 public:
         using EventType = EventT;
 
-        SequenceCondition (Condition<EventT> &a, Condition<EventT> &b) : a (a), b (b) {}
+        SequenceCondition (Condition<EventT> *a, Condition<EventT> *b) : a (a), b (b) {}
         virtual ~SequenceCondition () = default;
 
-        bool getResult () const override { return a.getResult () && b.getResult (); }
+        bool getResult () const override { return a->getResult () && b->getResult (); }
         void reset () override
         {
-                a.reset ();
-                b.reset ();
+                a->reset ();
+                b->reset ();
         }
 
-        virtual bool check (EventType const &event, EventType &retainedEvent) const override
+        bool check (EventType  &event, EventType &retainedEvent) const override
         {
-                if (!a.getResult ()) {
-                        a.check (event, retainedEvent);
+                if (!a->getResult ()) {
+                        a->check (event, retainedEvent);
                 }
 
-                if (a.getResult () && !b.getResult ()) {
-                        b.check (event, retainedEvent);
+                if (a->getResult () && !b->getResult ()) {
+                        b->check (event, retainedEvent);
                 }
 
                 return getResult ();
         }
 
 private:
-        Condition<EventType> &a;
-        Condition<EventType> &b;
+        gsl::not_null <Condition<EventType>*> a;
+        gsl::not_null <Condition<EventType>*> b;
 };
 
-template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> SequenceCondition<EventT> *seq (Condition<EventT> &a, Condition<EventT> &b)
+template <typename EventT = LIB_STATE_MACHINE_DEFAULT_EVENT_TYPE> SequenceCondition<EventT> *seq (Condition<EventT> *a, Condition<EventT> *b)
 {
         return new SequenceCondition<EventT> (a, b);
 }
 
-#endif // ANDCONDITION_H
