@@ -32,7 +32,7 @@ public:
 #ifndef UNIT_TEST
 protected:
 #endif
-        virtual bool checkImpl (EventType const &event) const override;
+        bool checkImpl (EventType const &event) const override;
 
         etl::string_view condition;
         StripInput stripInput;

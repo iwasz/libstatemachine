@@ -19,14 +19,15 @@ public:
         using EventType = EventT;
 
         NotCondition (Condition<EventT> *c) : cond (c) {}
-        virtual ~NotCondition () {}
+        virtual ~NotCondition () = default;
 
         bool getResult () const override { return !cond->getResult (); }
         void reset () override { cond->reset (); }
-        virtual bool check (EventType const &event, EventType &retainedEvent) const override { return !cond->check (event, retainedEvent); }
+//        bool checkImpl (EventType const &event) const override { return !cond->checkImpl (event); }
+        bool check (EventType &event, EventType &retainedEvent) const override { return !cond->check (event, retainedEvent); }
 
-protected:
-        bool checkImpl (const char *data) const { return !cond->checkImpl (data); }
+private:
+
         Condition<EventT> *cond;
 };
 
