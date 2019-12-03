@@ -450,10 +450,10 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                         auto endIter = ev.cbegin ();
                         std::advance (endIter, std::min<size_t> (size, MAX_LOG_LINE_SIZE));
                         std::copy_if (ev.cbegin (), endIter, std::back_inserter (copy),
-                                      [](auto const &chr) -> bool { return chr != '\r' && chr != '\n'; });
+                                      [] (auto const &chr) -> bool { return chr != '\r' && chr != '\n'; });
 
                         debug->print ("IN (");
-                        debug->print (int(size));
+                        debug->print (int (size));
                         debug->print (") : ");
                         debug->print ((uint8_t *)copy.data (), copy.size ());
                         debug->println ((size > MAX_LOG_LINE_SIZE) ? ("...") : (""));
