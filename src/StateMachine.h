@@ -445,18 +445,25 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                         }
 
                         size_t size = ev.size ();
+#define LIMIT_OUTPUT 1
+#if LIMIT_OUTPUT
                         EventT copy;
 
                         auto endIter = ev.cbegin ();
                         std::advance (endIter, std::min<size_t> (size, MAX_LOG_LINE_SIZE));
                         std::copy_if (ev.cbegin (), endIter, std::back_inserter (copy),
                                       [] (auto const &chr) -> bool { return chr != '\r' && chr != '\n'; });
-
+#endif
                         debug->print ("IN (");
                         debug->print (int (size));
                         debug->print (") : ");
+#if LIMIT_OUTPUT
                         debug->print ((uint8_t *)copy.data (), copy.size ());
                         debug->println ((size > MAX_LOG_LINE_SIZE) ? ("...") : (""));
+#else
+                        debug->print ((uint8_t *)ev.data (), size);
+                        debug->println ((size > MAX_LOG_LINE_SIZE) ? ("...") : (""));
+#endif
                 }
         }
 #endif
