@@ -34,7 +34,7 @@ public:
                         a->check (event, retainedEvent);
                 }
 
-                if (!b->getResult ()) {
+                if (a->getResult () && !b->getResult ()) {
                         b->check (event, retainedEvent);
                 }
 
