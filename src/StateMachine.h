@@ -445,8 +445,7 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                         }
 
                         size_t size = ev.size ();
-#define LIMIT_OUTPUT 1
-#if LIMIT_OUTPUT
+#ifdef LIMIT_OUTPUT
                         EventT copy;
 
                         auto endIter = ev.cbegin ();
@@ -457,7 +456,7 @@ template <typename EventT> typename StateMachine<EventT>::TransitionType *StateM
                         debug->print ("IN (");
                         debug->print (int (size));
                         debug->print (") : ");
-#if LIMIT_OUTPUT
+#ifdef LIMIT_OUTPUT
                         debug->print ((uint8_t *)copy.data (), copy.size ());
                         debug->println ((size > MAX_LOG_LINE_SIZE) ? ("...") : (""));
 #else
